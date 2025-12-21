@@ -1,0 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec 21 19:57:35 2025
+
+@author: rehma
+"""
+
+from Vec3 import color, point3, vec3
+from ray import ray
+from sphere import sphere
+from hittable import hit_record
+from camera import camera
+from list_hittable import list_hittable
+
