@@ -21,4 +21,3 @@ def get_color(world, r, ray_tmin, ray_tmax,  sky_color = color(0.529, 0.808, 0.9
     if world.hit(r, ray_tmin, ray_tmax, rec):
         return rec.color
     return sky_color
-        
