@@ -11,7 +11,7 @@ import time
 
 
 class camera:
-    def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.01, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 50, gamma:int = 0.5):
+    def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.001, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 5, gamma:int = 0.5):
         self.image_width = image_width
         self.image_height = int(self.image_width / aspect_ratio)
         port_width = port_height * (self.image_width / self.image_height)
@@ -42,7 +42,7 @@ class camera:
                         pixel_center = self.pixel00_loc + (i+random()-0.5)* self.pixel_u + (j+random()-0.5) * self.pixel_v
                         ray_direction = pixel_center - self.camera_center
                         r = ray(self.camera_center, ray_direction)
-                        pixel_color = ray_color(r,self.max_depth,world,self.gamma)
+                        pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, world, self.max_depth, self.gamma)
                         current_color += pixel_color
                     
                     current_color /= self.samples_per_pixel
