@@ -34,13 +34,16 @@ def get_color(world, r, ray_tmin, ray_tmax,  sky_color = color(0.529, 0.808, 0.9
         return rec.color
     return sky_color
 
-def ray_color(r, ray_tmin, ray_tmax, world, max_depth, gamma):
+def ray_color(r, ray_tmin, ray_tmax, world, max_depth):
     if (max_depth <= 0):
             return color(0,0,0)
     rec = hit_record()
     if world.hit(r, ray_tmin, ray_tmax, rec):
-        direction = rec.normal + vec3.random_unit_vector()
-        return gamma * ray_color(ray(rec.p, direction), ray_tmin, ray_tmax, world ,max_depth-1,gamma)
+        flag, attenuation, scattered = rec.material.scatter(r, rec)
+        if flag:
+            return attenuation * ray_color(scattered,ray_tmin, ray_tmax, world, max_depth-1)
+        return color(0,0,0)
+    
     unit_direction = unit_vector(r.direction())
     a = 0.5 * (unit_direction.y() + 1.0)
     return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0)

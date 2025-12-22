@@ -11,7 +11,7 @@ import time
 
 
 class camera:
-    def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.001, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 5, gamma:int = 0.5):
+    def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.001, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 5):
         self.image_width = image_width
         self.image_height = int(self.image_width / aspect_ratio)
         port_width = port_height * (self.image_width / self.image_height)
@@ -27,7 +27,6 @@ class camera:
         self.samples_per_pixel = samples_per_pixel
         self.saturation = saturation
         self.max_depth = max_depth
-        self.gamma = gamma
         
     def render(self, world, out_file = "image.ppm"):
         start_time = time.time()
@@ -42,7 +41,7 @@ class camera:
                         pixel_center = self.pixel00_loc + (i+random()-0.5)* self.pixel_u + (j+random()-0.5) * self.pixel_v
                         ray_direction = pixel_center - self.camera_center
                         r = ray(self.camera_center, ray_direction)
-                        pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, world, self.max_depth, self.gamma)
+                        pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, world, self.max_depth)
                         current_color += pixel_color
                     
                     current_color /= self.samples_per_pixel
@@ -54,8 +53,8 @@ class camera:
                      hours = elapsed // 3600
                      minutes = (elapsed % 3600) // 60
                      seconds = elapsed % 60
-                     print(f"Current time: {hours:02d}:{minutes:02d}:{seconds:02d}")
-                     print(f"Progress: {round((j/self.image_height) *100,2)} %")
+                     print(f"Current time: {hours:02d}:{minutes:02d}:{seconds:02d} | Progress: {round((j/self.image_height) *100,2)} %")
+                     print(f"")
         end_time = time.time()
         elapsed = int(end_time - start_time)
         hours = elapsed // 3600

@@ -6,13 +6,12 @@ Created on Fri Nov 14 14:59:20 2025
 """
 from hittable import hittable, hit_record
 from ray import ray
-from Vec3 import dot, point3,color
+from Vec3 import dot, point3
 
 class sphere(hittable):
-    def __init__(self, center: point3, radius: float, material=None):
+    def __init__(self, center: point3, radius: float, material):
         self.center = center
         self.radius = radius
-        self.color = color
         self.material = material
     
     
@@ -39,4 +38,5 @@ class sphere(hittable):
         rec.p = r.at(root)
         outward_normal = ((rec.p-self.center)/self.radius)
         rec.set_face_normal(r, outward_normal)
+        rec.material = self.material
         return True

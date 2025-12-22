@@ -6,12 +6,7 @@ Created on Mon Nov 10 23:47:10 2025
 """
 from Vec3 import vec3
 class ray:
-    def __init__(self, origin=None, direction=None):
-        # Default constructor -> zero vectors (same as empty C++ constructor)
-        if origin is None:
-            origin = vec3(0, 0, 0)
-        if direction is None:
-            direction = vec3(0, 0, 0)
+    def __init__(self, origin:vec3 = vec3(0, 0, 0), direction:vec3 = vec3(0, 0, 0)):
 
         self.orig = origin
         self.dir = direction

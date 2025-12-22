@@ -56,6 +56,10 @@ class vec3:
     def length_squared(self):
         return np.dot(self.e, self.e)
     
+    def near_zero(self):
+        s = 1e-8
+        return ((abs(self.e[0]) < s) and (abs(self.e[1]) < s) and (abs(self.e[2]) < s))
+    
     def __pow__(self, exponent):
         return vec3(*(self.e ** exponent))
 

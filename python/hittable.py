@@ -14,6 +14,7 @@ class hit_record:
         self.p = point3(0,0,0)
         self.t = 0.0
         self.front_face = None
+        self.material = None
         self.color = color(0,0,0)
     
     def copy_from(self, other):
@@ -21,7 +22,8 @@ class hit_record:
         self.p = other.p
         self.t = other.t
         self.front_face = other.front_face
-        self.color = other.color
+        self.material = other.material
+        self.color = color
     
     def set_face_normal(self, r, outward_normal):
         self.front_face = dot(r.direction(), outward_normal) < 0

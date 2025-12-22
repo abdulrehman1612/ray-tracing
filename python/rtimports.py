@@ -11,4 +11,4 @@ from sphere import sphere
 from hittable import hit_record
 from camera import camera
 from list_hittable import list_hittable
-
+from materials import *
