@@ -7,6 +7,8 @@ Created on Fri Nov 14 20:22:39 2025
 from rtimports import *
 from color import get_color, write_color, ray_color
 from random import random
+import time
+
 
 class camera:
     def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.01, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 50, gamma:int = 0.5):
@@ -28,6 +30,7 @@ class camera:
         self.gamma = gamma
         
     def render(self, world, out_file = "image.ppm"):
+        start_time = time.time()
         with open(out_file, "w") as file:
              
              file.write(f"P3\n{self.image_width} {self.image_height}\n255\n")
@@ -45,9 +48,21 @@ class camera:
                     current_color /= self.samples_per_pixel
                     current_color = current_color**self.saturation
                     write_color(file, current_color)
-                 if j%4 == 0:   
-                    print(f"Progress: {round((j/self.image_height) *100,2)} %")
+                 if j%4 == 0:
+                     current_time = time.time()
+                     elapsed = int(current_time - start_time)
+                     hours = elapsed // 3600
+                     minutes = (elapsed % 3600) // 60
+                     seconds = elapsed % 60
+                     print(f"Current time: {hours:02d}:{minutes:02d}:{seconds:02d}")
+                     print(f"Progress: {round((j/self.image_height) *100,2)} %")
+        end_time = time.time()
+        elapsed = int(end_time - start_time)
+        hours = elapsed // 3600
+        minutes = (elapsed % 3600) // 60
+        seconds = elapsed % 60
         print("Progress: Complete")
+        print(f"Time taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
 
         
 
