@@ -53,8 +53,8 @@ class camera:
                      hours = elapsed // 3600
                      minutes = (elapsed % 3600) // 60
                      seconds = elapsed % 60
-                     print(f"Current time: {hours:02d}:{minutes:02d}:{seconds:02d} | Progress: {round((j/self.image_height) *100,2)} %")
-                     print(f"")
+                     print(f"Elapsed_time: {hours:02d}:{minutes:02d}:{seconds:02d} | Progress: {round((j/self.image_height) *100,2)} %")
+                     print()
         end_time = time.time()
         elapsed = int(end_time - start_time)
         hours = elapsed // 3600
