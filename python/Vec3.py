@@ -6,7 +6,7 @@ Created on Mon Nov 10 23:47:07 2025
 """
 
 import numpy as np
-
+import random
 class vec3:
     def __init__(self, x=0.0, y=0.0, z=0.0):
         self.e = np.array([x, y, z], dtype=float)
@@ -55,10 +55,29 @@ class vec3:
 
     def length_squared(self):
         return np.dot(self.e, self.e)
+    
+    def __pow__(self, exponent):
+        return vec3(*(self.e ** exponent))
 
     def __repr__(self):
         return f"{self.e[0]} {self.e[1]} {self.e[2]}"
-
+    
+    #Random vectors
+    def random(a=-1,b=1):
+        return vec3(random.uniform(a,b),random.uniform(a,b),random.uniform(a,b))
+    
+    def random_unit_vector():
+        while True:
+            p = vec3.random()
+            lensq = p.length_squared()
+            if (1e-160 < lensq <= 1):
+                return (p/(lensq**0.5))
+    def random_on_hemisphere(normal):
+        on_unit_sphere = vec3.random_unit_vector()
+        if (dot(on_unit_sphere, normal)>0):
+            return on_unit_sphere
+        else:
+            return -on_unit_sphere
 # Aliases
 point3 = vec3
 color = vec3

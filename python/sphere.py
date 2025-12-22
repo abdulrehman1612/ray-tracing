@@ -9,7 +9,7 @@ from ray import ray
 from Vec3 import dot, point3,color
 
 class sphere(hittable):
-    def __init__(self, center: point3, radius: float, material):
+    def __init__(self, center: point3, radius: float, material=None):
         self.center = center
         self.radius = radius
         self.color = color
@@ -39,5 +39,4 @@ class sphere(hittable):
         rec.p = r.at(root)
         outward_normal = ((rec.p-self.center)/self.radius)
         rec.set_face_normal(r, outward_normal)
-        rec.color = self.material
         return True
