@@ -8,25 +8,47 @@ from rtimports import *
 from color import get_color, write_color, ray_color
 from random import random
 import time
-
+import math
 
 class camera:
-    def __init__(self, aspect_ratio, image_width, camera_center:point3 = point3(0,0,0), port_height:float=2, focal_length: float = 1, ray_tmin = 0.001, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 5):
+    def __init__(self, aspect_ratio, image_width, lookfrom:point3 = point3(0,0,0), lookat:point3 = point3(0,0,-1), zoom: float = 1.0 , rotate_camera: int = 0, clockwise = True, ray_tmin = 0.001, ray_tmax = float('inf'), samples_per_pixel:int=5, saturation:float = 1, max_depth:int = 10):
         self.image_width = image_width
         self.image_height = int(self.image_width / aspect_ratio)
+        self.camera_center = lookfrom
+        self.lookat = lookat
+        focal_length = (self.camera_center - self.lookat).length()
+        vfov = 90
+        angle = math.radians(rotate_camera)
+        if clockwise:
+            angle = -angle
+        vup = point3(math.sin(angle), math.cos(angle),0)
+        
+        
+        theta = math.radians(vfov)
+        h = math.tan(theta/2)
+        port_height = 2 * h * focal_length
         port_width = port_height * (self.image_width / self.image_height)
-        self.camera_center = camera_center
-        port_u = vec3(port_width, 0, 0)
-        port_v = vec3(0, -port_height, 0)
+        
+        w = unit_vector(lookfrom - lookat)
+        u = unit_vector(cross(vup, w))
+        v = cross(w, u)
+        
+
+        port_u = port_width * u
+        port_v = port_height * -v
         self.pixel_u = port_u / self.image_width
         self.pixel_v = port_v / self.image_height
-        port_upperleft = self.camera_center - vec3(0,0,focal_length) - port_u/2 - port_v/2
+        port_upperleft = self.camera_center - (zoom* focal_length * w) - port_u/2 - port_v/2
         self.pixel00_loc = port_upperleft + 0.5*(self.pixel_u + self.pixel_v)
+        
         self.ray_tmin = ray_tmin
         self.ray_tmax = ray_tmax
         self.samples_per_pixel = samples_per_pixel
         self.saturation = saturation
         self.max_depth = max_depth
+        
+        
+        
         
     def render(self, world, out_file = "image.ppm"):
         start_time = time.time()

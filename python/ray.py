@@ -22,3 +22,4 @@ class ray:
 
     def __repr__(self):
         return f"ray(origin={self.orig}, direction={self.dir})"
+

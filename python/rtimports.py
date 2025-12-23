@@ -5,7 +5,7 @@ Created on Sun Dec 21 19:57:35 2025
 @author: rehma
 """
 
-from Vec3 import color, point3, vec3
+from Vec3 import *
 from ray import ray
 from sphere import sphere
 from hittable import hit_record

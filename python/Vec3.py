@@ -100,3 +100,14 @@ def random_on_hemisphere(normal):
 
 def reflect(v, n):
     return v - 2*dot(v,n)*n
+
+def refract(r:vec3, n: vec3, etai_over_etat: float):
+    cos_theta = min(dot(-r, n), 1.0)
+    r_out_perp =  etai_over_etat * (r + cos_theta*n)
+    r_out_parallel = -((abs(1.0 - r_out_perp.length_squared()))**0.5) * n
+    return r_out_perp + r_out_parallel
+    
+def reflectance(cosine,refraction_index):
+        r0 = ((1 - refraction_index)/(1 + refraction_index))
+        r0 = r0*r0
+        return r0 + (1-r0)*((1 - cosine)**5)
