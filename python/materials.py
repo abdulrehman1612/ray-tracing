@@ -31,10 +31,14 @@ class lambertian(material):
         return  (True, self.albedo, scattered)
 
 class metal(material):
-    def __init__(self,albedo):
+    def __init__(self,albedo, fuzz):
         self.albedo = albedo
-    
+        self.fuzz = min(fuzz, 1)
+
     def scatter(self, r: ray, rec: hit_record):
         reflected = reflect(r.direction(), rec.normal)
+        reflected = unit_vector(reflected) + (self.fuzz * random_unit_vector())
         scattered = ray(rec.p, reflected)
-        return (True, self.albedo, scattered)
+        flag = (dot(scattered.direction(), rec.normal) > 0)
+        return (flag, self.albedo, scattered)
+    
