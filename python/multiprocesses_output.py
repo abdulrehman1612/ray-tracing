@@ -21,7 +21,7 @@ def append_color(pixel_color):
 
 def multiprocess(input_tuple):
     list_color = ""
-    world,image_height, image_width, samples_per_pixel,max_depth ,camera_center, defocus_angle, defocus_disk_v,defocus_disk_u, pixel_u, pixel_v, ray_tmin, ray_tmax, pixel00_loc,saturation , process, processes = input_tuple
+    index,world,image_height, image_width, samples_per_pixel,max_depth ,camera_center, defocus_angle, defocus_disk_v,defocus_disk_u, pixel_u, pixel_v, ray_tmin, ray_tmax, pixel00_loc,saturation , process, processes = input_tuple
     out_string = ""
     for j in range(int(image_height*process), int((image_height*process)+(image_height/processes))):
         for i in range(image_width):
@@ -37,4 +37,4 @@ def multiprocess(input_tuple):
             current_color /= samples_per_pixel
             current_color = current_color**saturation
             list_color+=(append_color(current_color))
-    return list_color
+    return (index,list_color)

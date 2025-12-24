@@ -86,16 +86,28 @@ class camera:
         print(f"Time taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
 
         
-    def render_multicore(self,world,out_file = "image.ppm", processes=50):
+    def render_multicore(self,world,out_file = "image.ppm", processes=12, tasks = 100):
         start_time = time.time()
         list_input = []
-        for process in range(processes):
-            list_input.append((world, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , process/processes, processes))
+        list_output = []
+        for task in range(tasks):
+            list_input.append((task,world, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , task/tasks, tasks))
+            list_output.append(None)
+        tasks_done = 0
         with Pool(processes) as p:
-            out_list = p.map(multiprocess, list_input)
+            for output in p.imap_unordered(multiprocess, list_input):
+                list_output[output[0]] = output[1]
+                tasks_done += 1
+                current_time = time.time()
+                elapsed = int(current_time - start_time)
+                hours = elapsed // 3600
+                minutes = (elapsed % 3600) // 60
+                seconds = elapsed % 60
+                print(f"Elapsed_time: {hours:02d}:{minutes:02d}:{seconds:02d} | Progress: {round((tasks_done/tasks)*100,2)} %")
+                
         with open(out_file, "w") as file:  
              file.write(f"P3\n{self.image_width} {self.image_height}\n255\n")
-             file.write(" ".join(out_list))
+             file.write(" ".join(list_output))
         end_time = time.time()
         elapsed = int(end_time - start_time)
         hours = elapsed // 3600
