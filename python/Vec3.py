@@ -97,6 +97,17 @@ def random_on_hemisphere(normal):
         return on_unit_sphere
     else:
         return -on_unit_sphere
+    
+def random_in_unit_disk(a = -1, b = 1):
+    while True:
+        p = vec3(random.uniform(a,b), random.uniform(a,b),0)
+        if p.length_squared() < 1:
+            return p
+
+def random_disk_sample(center, defocus_disk_u, defocus_disk_v):
+    p = random_in_unit_disk()
+    return center + (p.x() * defocus_disk_u) + (p.y() * defocus_disk_v)
+
 
 def reflect(v, n):
     return v - 2*dot(v,n)*n

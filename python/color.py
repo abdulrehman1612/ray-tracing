@@ -8,6 +8,7 @@ from hittable import hit_record
 from Vec3 import *
 from ray import ray
 
+
 def clamp(color):
     return max(0, min(0.999, color))
 
