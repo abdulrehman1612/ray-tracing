@@ -5,6 +5,7 @@ Created on Sun Dec 21 20:30:48 2025
 @author: rehma
 """
 from hittable import hit_record
+from bvh import hit_BVH, make_BVH
 from Vec3 import *
 from ray import ray
 
@@ -35,14 +36,14 @@ def get_color(world, r, ray_tmin, ray_tmax,  sky_color = color(0.529, 0.808, 0.9
         return rec.color
     return sky_color
 
-def ray_color(r, ray_tmin, ray_tmax, world, max_depth):
+def ray_color(r, ray_tmin, ray_tmax, max_depth, BVH):
     if (max_depth <= 0):
             return color(0,0,0)
     rec = hit_record()
-    if world.hit(r, ray_tmin, ray_tmax, rec):
+    if hit_BVH(BVH, r, ray_tmin, ray_tmax, rec):
         flag, attenuation, scattered = rec.material.scatter(r, rec)
         if flag:
-            return attenuation * ray_color(scattered,ray_tmin, ray_tmax, world, max_depth-1)
+            return attenuation * ray_color(scattered,ray_tmin, ray_tmax, max_depth-1, BVH)
         return color(0,0,0)
     
     unit_direction = unit_vector(r.direction())

@@ -6,13 +6,19 @@ Created on Fri Nov 14 14:59:20 2025
 """
 from hittable import hittable, hit_record
 from ray import ray
-from Vec3 import dot, point3
+from Vec3 import dot, point3, vec3
 
 class sphere(hittable):
     def __init__(self, center: point3, radius: float, material):
         self.center = center
         self.radius = radius
         self.material = material
+        
+    def axis_min(self):
+        return vec3(self.center.x() - self.radius, self.center.y() - self.radius, self.center.z() - self.radius)
+    
+    def axis_max(self):
+        return vec3(self.center.x() + self.radius, self.center.y() + self.radius, self.center.z() + self.radius)
     
     
     

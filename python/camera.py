@@ -11,7 +11,7 @@ import time
 import math
 from multiprocessing import Pool
 from multiprocesses_output import multiprocess
-
+from bvh import make_BVH
 
 
 
@@ -51,6 +51,7 @@ class camera:
         
     def render(self, world, out_file = "image.ppm"):
         start_time = time.time()
+        BVH = make_BVH(world.objects)
         print()
         print("Rendering...")
         print()
@@ -64,7 +65,7 @@ class camera:
                         ray_origin = self.camera_center if (self.defocus_angle <= 0) else random_disk_sample(self.camera_center, self.defocus_disk_u, self.defocus_disk_v)
                         ray_direction = pixel_center - ray_origin
                         r = ray(ray_origin, ray_direction)
-                        pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, world, self.max_depth)
+                        pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, self.max_depth, BVH)
                         current_color += pixel_color
                     current_color /= self.samples_per_pixel
                     current_color = current_color**self.saturation
@@ -90,8 +91,9 @@ class camera:
         start_time = time.time()
         list_input = []
         list_output = []
+        BVH = make_BVH(world.objects)
         for task in range(tasks):
-            list_input.append((task,world, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , task/tasks, tasks))
+            list_input.append((task,BVH, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , task/tasks, tasks))
             list_output.append(None)
         tasks_done = 0
         with Pool(processes) as p:
