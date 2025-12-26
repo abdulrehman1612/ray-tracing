@@ -12,3 +12,4 @@ from hittable import hit_record
 from camera import camera
 from materials import *
 from bvh import list_hittable
+from show_image_as_plot import show_image

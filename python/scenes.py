@@ -22,13 +22,16 @@ def scene():
                 if choose_mat < 0.8:
                     albedo = color.random() * color.random()
                     sphere_material = lambertian(albedo)
+                    center2 = center+vec3(0, uniform(0,.5), 0)
+                    world.add(sphere(center, 0.2, sphere_material, center2))
                 elif choose_mat < 0.95:
                     albedo = color.random(0.5, 1.0)
                     fuzz = uniform(0.0, 0.5)
                     sphere_material = metal(albedo, fuzz)
+                    world.add(sphere(center, 0.2, sphere_material))
                 else:
                     sphere_material = dielectric(1.5)
-                world.add(sphere(center, 0.2, sphere_material))
+                    world.add(sphere(center, 0.2, sphere_material))
 
     material1 = dielectric(1.5)
     world.add(sphere(point3(0, 1, 0), 1.0, material1))
@@ -38,6 +41,7 @@ def scene():
     world.add(sphere(point3(4, 1, 0), 1.0, material3))
 
     return world
+
 
 
 def scene2():

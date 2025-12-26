@@ -21,16 +21,16 @@ def append_color(pixel_color):
 
 def multiprocess(input_tuple):
     list_color = ""
-    index,BVH,image_height, image_width, samples_per_pixel,max_depth ,camera_center, defocus_angle, defocus_disk_v,defocus_disk_u, pixel_u, pixel_v, ray_tmin, ray_tmax, pixel00_loc,saturation , process, processes = input_tuple
+    index,BVH,image_height, image_width, samples_per_pixel,max_depth ,camera_center, defocus_angle, defocus_disk_v,defocus_disk_u, pixel_u, pixel_v, ray_tmin, ray_tmax, pixel00_loc,saturation , processes = input_tuple
     out_string = ""
-    for j in range(int(image_height*process), int((image_height*process)+(image_height/processes))):
+    for j in range((image_height * index) // processes, (image_height * (index + 1)) // processes):
         for i in range(image_width):
             current_color = color(0,0,0)
             for n in range(samples_per_pixel):
                 pixel_center = pixel00_loc + (i+random.random()-0.5)* pixel_u + (j+random.random()-0.5) * pixel_v
                 ray_origin = camera_center if (defocus_angle <= 0) else random_disk_sample(camera_center, defocus_disk_u, defocus_disk_v)
                 ray_direction = pixel_center - ray_origin
-                r = ray(ray_origin, ray_direction)
+                r = ray(ray_origin, ray_direction, random.random())
                 pixel_color = ray_color(r,ray_tmin, ray_tmax, max_depth, BVH)
                 current_color += pixel_color
             

@@ -64,7 +64,8 @@ class camera:
                         pixel_center = self.pixel00_loc + (i+random()-0.5)* self.pixel_u + (j+random()-0.5) * self.pixel_v
                         ray_origin = self.camera_center if (self.defocus_angle <= 0) else random_disk_sample(self.camera_center, self.defocus_disk_u, self.defocus_disk_v)
                         ray_direction = pixel_center - ray_origin
-                        r = ray(ray_origin, ray_direction)
+                        ray_time = random()
+                        r = ray(ray_origin, ray_direction, ray_time)
                         pixel_color = ray_color(r,self.ray_tmin, self.ray_tmax, self.max_depth, BVH)
                         current_color += pixel_color
                     current_color /= self.samples_per_pixel
@@ -93,7 +94,7 @@ class camera:
         list_output = []
         BVH = make_BVH(world.objects)
         for task in range(tasks):
-            list_input.append((task,BVH, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , task/tasks, tasks))
+            list_input.append((task,BVH, self.image_height, self.image_width, self.samples_per_pixel, self.max_depth,self.camera_center, self.defocus_angle, self.defocus_disk_v,self.defocus_disk_u, self.pixel_u, self.pixel_v, self.ray_tmin, self.ray_tmax, self.pixel00_loc,self.saturation , tasks))
             list_output.append(None)
         tasks_done = 0
         with Pool(processes) as p:

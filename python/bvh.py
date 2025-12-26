@@ -101,7 +101,7 @@ def make_BVH(objects, axis=0):
         return BVHNode(box, objects=objects)
     
     axis = axis % 3
-    objects = sorted(objects, key=lambda obj: obj.center[axis])
+    objects = sorted(objects, key=lambda obj: obj.aabb.center[axis])
     mid = len(objects) // 2
     left_objs = objects[:mid]
     right_objs = objects[mid:]
@@ -112,7 +112,7 @@ def make_BVH(objects, axis=0):
     return BVHNode(box, left=left_node, right=right_node)
         
 def BVH(objects):
-    return make_BVH(objects)  
+    return make_BVH(objects) 
             
 def hit_BVH(node, r, ray_tmin, ray_tmax, rec):
     if not node.box.hit(r, ray_tmin, ray_tmax):
@@ -122,7 +122,6 @@ def hit_BVH(node, r, ray_tmin, ray_tmax, rec):
     closest = ray_tmax
     temp = hit_record()
 
-    # Leaf node
     if node.objects is not None:
         for obj in node.objects:
             if obj.hit(r, ray_tmin, closest, temp):
@@ -136,7 +135,7 @@ def hit_BVH(node, r, ray_tmin, ray_tmax, rec):
         closest = rec.t
     if hit_BVH(node.right, r, ray_tmin, closest, rec):
         hit_anything = True
-    return hit_anything  
+    return hit_anything
         
     
     

@@ -26,7 +26,7 @@ class lambertian(material):
         if scatter_direction.near_zero():
             scatter_direction = rec.normal
 
-        scattered = ray(rec.p,scatter_direction)
+        scattered = ray(rec.p,scatter_direction, r.time())
         
         return  (True, self.albedo, scattered)
 
@@ -38,7 +38,7 @@ class metal(material):
     def scatter(self, r: ray, rec: hit_record):
         reflected = reflect(r.direction(), rec.normal)
         reflected = unit_vector(reflected) + (self.fuzz * random_unit_vector())
-        scattered = ray(rec.p, reflected)
+        scattered = ray(rec.p, reflected, r.time())
         flag = (dot(scattered.direction(), rec.normal) > 0)
         return (flag, self.albedo, scattered)
 
@@ -59,6 +59,6 @@ class dielectric(material):
         else:
             direction = refract(unit_direction, rec.normal, refractive_index)
         
-        scattered = ray(rec.p, direction)
+        scattered = ray(rec.p, direction, r.time())
         
         return (True, attenuation, scattered)
