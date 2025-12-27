@@ -11,7 +11,7 @@ from random import random, uniform
 def scene():
     world = list_hittable()
 
-    ground_material = lambertian(color(0.5, 0.5, 0.5))
+    ground_material = lambertian(checker_texture(0.32, color(.2, .3, .1), color(.9, .9, .9)))
     world.add(sphere(point3(0, -1000, 0), 1000, ground_material))
 
     for a in range(-11, 11):
@@ -58,4 +58,10 @@ def scene2():
     world.add(sphere(point3(-1.0,    0.0, -1.0),   0.4, material_bubble))
     world.add(sphere(point3( 1.0,    0.0, -1.0),   0.5, material_right))
     
+    return world
+
+def scene3():
+    world = list_hittable()
+    world.add(sphere(point3(0,-1000,0), 1000, lambertian(noise_texture(4))))
+    world.add(sphere(point3(0,2,0), 2, lambertian(noise_texture(4))))
     return world

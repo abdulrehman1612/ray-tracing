@@ -8,6 +8,7 @@ from hittable import hittable, hit_record
 from ray import ray
 from Vec3 import dot, point3, vec3
 from bvh import AABB, enclose
+import math
 
 class sphere(hittable):
     def __init__(self, center1: point3, radius: float, material, center2 = None):
@@ -27,7 +28,6 @@ class sphere(hittable):
             
             return enclose([box1, box2])
     
-        
 
         
     def axis_min(self):
@@ -36,7 +36,12 @@ class sphere(hittable):
     def axis_max(self):
         return self.aabb.axis_max()
     
-    
+    def get_sphere_uv(p, rec):
+        pi = math.pi
+        theta = math.acos(-p.y())
+        phi = math.atan2(-p.z(), p.x()) + pi
+        rec.u = phi / (2*pi)
+        rec.v = theta / pi
     
     def hit(self, r: ray, ray_tmin: float, ray_tmax: float, rec: hit_record):
         current_center = self.center.at(r.time())
@@ -61,5 +66,6 @@ class sphere(hittable):
         rec.p = r.at(root)
         outward_normal = ((rec.p-current_center)/self.radius)
         rec.set_face_normal(r, outward_normal)
+        sphere.get_sphere_uv(outward_normal, rec)
         rec.material = self.material
         return True

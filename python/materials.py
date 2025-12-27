@@ -10,6 +10,7 @@ from ray import ray
 from Vec3 import *
 from hittable import hit_record
 from random import random
+from textures import texture, solid_color
 
 class material(ABC):
     @abstractmethod
@@ -17,8 +18,8 @@ class material(ABC):
         return (False, None, None)
     
 class lambertian(material):
-    def __init__(self, albedo:color):
-        self.albedo = albedo
+    def __init__(self, texture_or_albedo):
+        self.texture = texture_or_albedo if isinstance(texture_or_albedo, texture) else solid_color(texture_or_albedo)
     
     def scatter(self, r: ray, rec: hit_record):
         scatter_direction = rec.normal + random_unit_vector()
@@ -27,8 +28,8 @@ class lambertian(material):
             scatter_direction = rec.normal
 
         scattered = ray(rec.p,scatter_direction, r.time())
-        
-        return  (True, self.albedo, scattered)
+        attenuation = self.texture.value(rec.u, rec.v, rec.p)
+        return  (True, attenuation, scattered)
 
 class metal(material):
     def __init__(self,albedo:color, fuzz:float):

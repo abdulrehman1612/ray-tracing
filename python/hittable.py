@@ -15,7 +15,8 @@ class hit_record:
         self.t = 0.0
         self.front_face = None
         self.material = None
-        self.color = color(0,0,0)
+        self.u = None
+        self.v = None
     
     def copy_from(self, other):
         self.normal = other.normal
@@ -23,8 +24,9 @@ class hit_record:
         self.t = other.t
         self.front_face = other.front_face
         self.material = other.material
-        self.color = color
-    
+        self.u = other.u
+        self.v = other.v
+
     def set_face_normal(self, r, outward_normal):
         self.front_face = dot(r.direction(), outward_normal) < 0
         self.normal = outward_normal if (self.front_face == True) else -outward_normal
