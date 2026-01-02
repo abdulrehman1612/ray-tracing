@@ -41,7 +41,7 @@ class volume(hittable):
         rec2 = hit_record()
         
         if self.bvh:
-            if not hit_BVH(self.bvh,r, ray_tmin, ray_tmax, rec1):
+            if not hit_BVH(self.bvh,r, -float("inf"), ray_tmax, rec1):
                 return False
             
             
@@ -49,7 +49,7 @@ class volume(hittable):
                 return False
             
         else:
-            if not self.obj.hit(r, ray_tmin, ray_tmax, rec1):
+            if not self.obj.hit(r, -float("inf"), ray_tmax, rec1):
                 return False
             
             

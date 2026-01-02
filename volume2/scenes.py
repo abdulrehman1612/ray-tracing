@@ -8,7 +8,7 @@ Created on Sun Dec 21 21:59:49 2025
 from rtimports import *
 from random import random, uniform
 
-def scene():
+def week1_final_scene():
     world = list_hittable()
 
     ground_material = lambertian(color(0.5, 0.5, 0.5))
@@ -44,7 +44,7 @@ def scene():
 
 
 
-def scene3():
+def cornel_box_scene():
     world = list_hittable()
     red   = lambertian(color(0.65, 0.05, 0.05))
     white = lambertian(color(0.73, 0.73, 0.73))
@@ -57,12 +57,6 @@ def scene3():
     world.add(quad(point3(0,555,0), vec3(555,0,0), vec3(0,0,555), white))
     world.add(quad(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white))
     world.add(quad(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white))
-    
-    #world.add(volume(box(point3(130, 0, 65), point3(295, 165, 230), white), 0.01, isotropic(color(1,1,1))))
-    #world.add(volume(box(point3(265, 0, 295), point3(430, 330, 460), white), 0.01, isotropic(color(0,0,0))))
-    
-    #world.add(volume(sphere(point3(278, 278, -400), 500, color(1,1,1)), 1, isotropic(color(1,1,0))))
-    #world.add(sphere(point3(278, 278, -400), 30, dielectric(1.3)))
     
     box1 = box(point3(0,0,0), point3(165,330,165), white)
     box1 = rotate_y(box1 , math.radians(15))
@@ -80,7 +74,7 @@ def scene3():
 
 
 
-def final_scene():
+def week2_final_scene():
     world = list_hittable()
     
     ground = lambertian(color(0.48, 0.83, 0.53))
@@ -115,7 +109,7 @@ def final_scene():
     
     world.add(sphere(point3(0, 150, 145), 50, metal(color(0.8, 0.8, 0.9), 1.0)))
     
-    boundary = sphere(point3(360,150,145), 70.1, dielectric(1.5))
+    boundary = sphere(point3(360,150,145), 70, dielectric(1.5))
     
     world.add(boundary)
     
@@ -123,7 +117,7 @@ def final_scene():
     
     world.add(volume(boundary, 0.2, isotropic(color(0.2, 0.4, 0.9))))
     
-    boundary = sphere(point3(220,280,300), 900, dielectric(1.5))
+    boundary = sphere(point3(0,0,0), 5000, dielectric(1.5))
     
     world.add(volume(boundary, 0.0001, isotropic(color(1,1,1))))
     

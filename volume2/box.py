@@ -25,7 +25,7 @@ def box(a,b, mat):
 
     sides.add(quad(point3(min_.x(), min_.y(), max_.z()),  dx,  dy, mat))
     sides.add(quad(point3(max_.x(), min_.y(), max_.z()), -dz,  dy, mat))
-    sides.add(quad(point3(max_.x(), min_.y(), max_.z()), -dx,  dy, mat))
+    sides.add(quad(point3(max_.x(), min_.y(), min_.z()), -dx,  dy, mat))
     sides.add(quad(point3(min_.x(), min_.y(), min_.z()),  dz,  dy, mat))
     sides.add(quad(point3(min_.x(), max_.y(), max_.z()),  dx, -dz, mat))
     sides.add(quad(point3(min_.x(), min_.y(), min_.z()),  dx,  dz, mat))
