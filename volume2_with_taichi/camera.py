@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan  8 00:33:55 2026
+
+@author: AGU
+"""
+
+from taichi_world import init_world
+import taichi as ti
+from taichi_kernal_main import run_kernal, make_field_pic
+import math
+import time
+
+class camera:
+    def __init__(self, aspect_ratio, image_width, lookfrom=[0,0,0], lookat=[0,0,-1], zoom: float = 1.0 , rotate_camera: int = 0,defocus_angle = 0, focus_distance = 10 , samples_per_pixel:int=5, saturation:float = 1, background_color = [0,0,0], max_depth:int = 50):
+        self.image_width = image_width
+        self.image_height = int(self.image_width / aspect_ratio)
+        self.lookfrom = lookfrom
+        self.lookat = lookat
+        self.zoom = zoom
+        self.rotate_camera = rotate_camera
+        self.defocus_angle = defocus_angle
+        self.focus_distance = focus_distance
+        self.samples_per_pixel = samples_per_pixel
+        self.saturation = saturation
+        self.max_depth = max_depth
+        self.background_color = background_color
+    
+    def render(self, world):
+        
+        ti.init(arch=ti.cuda,debug=False,kernel_profiler=False)
+        
+        compile_time_start = time.time()
+        print()
+        print("Compiling world...")
+        
+        init_world(world)
+        
+        compile_time_end = time.time()
+        elapsed = int(compile_time_end - compile_time_start)
+        hours = elapsed // 3600
+        minutes = (elapsed % 3600) // 60
+        seconds = elapsed % 60
+        print()
+        print(f"World compilation succesful! | Time_taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
+        
+        image_width = self.image_width
+        image_height = self.image_height
+        lookfrom = ti.Vector(self.lookfrom)
+        lookat = ti.Vector(self.lookat)
+        zoom = self.zoom
+        rotate_camera = self.rotate_camera
+        defocus_angle = self.defocus_angle
+        focus_distance = self.focus_distance
+        samples_per_pixel = self.samples_per_pixel
+        max_depth = self.max_depth
+        background_color = ti.Vector(self.background_color)
+        make_field_pic(self.image_width, self.image_height)
+        gui = ti.GUI("Ray Tracer", res=(self.image_width, self.image_height))
+        
+        from taichi_kernal_main import image_pixels,samples_per_pixel_completed
+        start_time = time.time()
+        print()
+        print("Rendering image...")
+        
+        run_kernal(image_width, image_height, lookfrom, lookat, zoom, rotate_camera, defocus_angle, focus_distance, samples_per_pixel,max_depth, background_color)
+        ti.sync()
+        
+        current_time = time.time()
+        elapsed = int(current_time - start_time)
+        hours = elapsed // 3600
+        minutes = (elapsed % 3600) // 60
+        seconds = elapsed % 60
+        print()
+        print("Rendering Complete!")
+        print(f"Time_taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
+        
+        while gui.running:
+            gui.set_image(image_pixels)
+            gui.show()
+        
