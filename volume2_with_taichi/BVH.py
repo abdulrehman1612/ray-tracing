@@ -50,9 +50,12 @@ def enclose(objects):
     return min_, max_
 
 
+
+        
+    
 def make_BVH(list_objects, axis = 0):
     
-    if len(list_objects) <= 4 :
+    if len(list_objects) <= 1:
         min_cords , max_cords = enclose(list_objects)
         return BVHNode(min_cords,max_cords, objects = list_objects)    
 
@@ -63,6 +66,40 @@ def make_BVH(list_objects, axis = 0):
     right_objs = objects[mid:]
     left_node = make_BVH(left_objs, axis + 1)
     right_node = make_BVH(right_objs, axis + 1)
-    min_cords, max_cords = enclose(objects)
+    
+    min_cords, max_cords = enclose([left_node, right_node])
 
     return BVHNode(min_cords, max_cords, left=left_node, right=right_node)
+    
+    
+    
+bvh_nodes = []
+bvh_primitive_indices = []
+
+def flatten_bvh(node):
+
+    node_index = len(bvh_nodes)
+    bvh_nodes.append({"min": node.min.as_list(),
+                      "max": node.max.as_list(),
+                      "left": -1,
+                      "right": -1,
+                      "first_prim": -1,
+                      "prim_count": 0})
+
+    if node.left is None and node.right is None:
+        first_prim = len(bvh_primitive_indices)
+        for obj in node.objects:
+            bvh_primitive_indices.append(obj.prim_id)
+        bvh_nodes[node_index]["first_prim"] = first_prim
+        bvh_nodes[node_index]["prim_count"] = len(node.objects)
+    else:
+        left_idx = flatten_bvh(node.left)
+        right_idx = flatten_bvh(node.right)
+
+        bvh_nodes[node_index]["left"] = left_idx
+        bvh_nodes[node_index]["right"] = right_idx
+    return node_index
+
+
+
+

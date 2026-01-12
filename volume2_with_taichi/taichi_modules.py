@@ -190,6 +190,7 @@ def material_scatter(r, rec_tuple):
         albedo_index = taichi_world.diffuse_light_albedo[mat_idx]
         emitted = taichi_world.solid_color_vec[albedo_index]
         
+        
     return (scatter, scattered, attenuation, emitted)
 
 
@@ -236,12 +237,153 @@ def texture_value(texture_type, texture_idx, u, v, p):
         
         color = taichi_world.image_texture_data[j, taichi_world.image_texture_width_start[texture_idx] + i]
         
-        
-        
     return color
 
+@ti.func
+def hit_aabb(r, ray_tmin, ray_tmax, min_cords, max_cords):
+    hit = True
+    
+    tmin = (min_cords[0] - r.origin[0]) / r.direction[0]
+    tmax = (max_cords[0] - r.origin[0]) / r.direction[0]
+    
+    temp = 0.0
+    if 1/r.direction[0] < 0:
+        temp = tmin
+        tmin = tmax
+        tmax = temp
+    
+    t0 = max(ray_tmin, tmin)
+    t1 = min(ray_tmax, tmax)
+    
+    if t1 <= t0:
+        hit = False
+    
+    tmin = (min_cords[1] - r.origin[1]) / r.direction[1]
+    tmax = (max_cords[1] - r.origin[1]) / r.direction[1]
+    
+    temp = 0.0
+    if 1/r.direction[1] < 0:
+        temp = tmin
+        tmin = tmax
+        tmax = temp
+    
+    t0 = max(t0, tmin)
+    t1 = min(t1, tmax)
+    
+    if t1 <= t0:
+        hit = False
+    
+    tmin = (min_cords[2] - r.origin[2]) / r.direction[2]
+    tmax = (max_cords[2] - r.origin[2]) / r.direction[2]
+    
+    temp = 0.0
+    if 1/r.direction[2] < 0:
+        temp = tmin
+        tmin = tmax
+        tmax = temp
+    
+    t0 = max(t0, tmin)
+    t1 = min(t1, tmax)
+    
+    if t1 <= t0:
+        hit = False
+
+    
+    return hit
+    
 
 
+
+
+@ti.func
+def quad_hit(obj_index, r, ray_tmin, ray_tmax):
+    
+    hit = True
+    t = -1.0
+    p = ti.Vector([0,0,0],dt=ti.f32)
+    front_face = False
+    normal = ti.Vector([0,0,0],dt=ti.f32)
+    u = -1.0
+    v = -1.0
+    material_type = -1
+    material_index = -1
+    
+    current_Q = taichi_world.quad_Q[obj_index]
+    current_U = taichi_world.quad_U[obj_index]
+    current_V = taichi_world.quad_V[obj_index]
+    
+    n = cross(current_U,current_V)
+    normal = n.normalized()
+    w = n / n.dot(n)
+    D = normal.dot(current_Q)
+    denom = normal.dot(r.direction)
+    if abs(denom) < 1e-8:
+        hit = False
+    t = (D - normal.dot(r.origin)) / denom
+    if not (ray_tmin <= t <= ray_tmax):
+        hit = False
+    
+    intersection = r.origin + t * r.direction
+    p = intersection - current_Q
+    alpha = w.dot(cross(p, current_V))
+    beta = w.dot(cross(current_U, p))
+    
+    if not (0 <= alpha <= 1) or not (0 <= beta <= 1):
+        hit = False
+    
+    if hit:
+        t = t
+        p = intersection
+        front_face, normal = set_face_normal(r, normal)
+        u = alpha
+        v = beta
+        material_type = taichi_world.quad_material_type[obj_index]
+        material_index = taichi_world.quad_material_index[obj_index]
+    
+    return (hit, t, p, front_face, normal, u, v, material_type, material_index)
+    
+    
+    
+
+@ti.func
+def sphere_hit(obj_index, r, ray_tmin, ray_tmax):
+    
+    hit = True
+    t = -1.0
+    p = ti.Vector([0,0,0],dt=ti.f32)
+    front_face = False
+    normal = ti.Vector([0,0,0],dt=ti.f32)
+    u = -1.0
+    v = -1.0
+    material_type = -1
+    material_index = -1
+    
+    current_center = taichi_world.sphere_center0[obj_index] + r.time * taichi_world.sphere_center1[obj_index]
+    current_radius = taichi_world.sphere_radius[obj_index]
+    oc = current_center - r.origin
+    a = r.direction.norm_sqr()
+    h = r.direction.dot(oc)
+    c = oc.norm_sqr()-current_radius**2
+    discriminent = h*h-a*c
+    if discriminent < 0:
+        hit = False
+    
+    sqrt_d = discriminent**0.5
+    root = (h - sqrt_d) / a
+    if root <= ray_tmin or ray_tmax <= root:
+        root = (h + sqrt_d) / a
+        if root <= ray_tmin or ray_tmax <= root:
+            hit = False
+    if hit:
+        t = root
+        p = r.origin + root * r.direction
+        outward_normal = (p - current_center)/current_radius
+        front_face, normal = set_face_normal(r, outward_normal)
+        u,v = get_sphere_uv(outward_normal)
+        material_type = taichi_world.sphere_material_type[obj_index]
+        material_index = taichi_world.sphere_material_index[obj_index]
+
+    return (hit, t, p, front_face, normal, u, v, material_type, material_index)
 
 
 @ti.func
@@ -258,70 +400,24 @@ def object_hit(obj_type, obj_index, r, ray_tmin, ray_tmax):
     material_index = -1
     
     if obj_type == 0: #sphere
-        hit = True
-
-        current_center = taichi_world.sphere_center0[obj_index] + r.time * taichi_world.sphere_center1[obj_index]
-        current_radius = taichi_world.sphere_radius[obj_index]
-        oc = current_center - r.origin
-        a = r.direction.norm_sqr()
-        h = r.direction.dot(oc)
-        c = oc.norm_sqr()-current_radius**2
-        discriminent = h*h-a*c
-        if discriminent < 0:
-            hit = False
-        
-        sqrt_d = discriminent**0.5
-        root = (h - sqrt_d) / a
-        if root <= ray_tmin or ray_tmax <= root:
-            root = (h + sqrt_d) / a
-            if root <= ray_tmin or ray_tmax <= root:
-                hit = False
-        
-        if hit:
-
-            t = root
-            p = r.origin + root * r.direction
-            outward_normal = (p - current_center)/current_radius
-            front_face, normal = set_face_normal(r, outward_normal)
-            u,v = get_sphere_uv(outward_normal)
-            material_type = taichi_world.sphere_material_type[obj_index]
-            material_index = taichi_world.sphere_material_index[obj_index]
+    
+        hit, t, p, front_face, normal, u, v, material_type, material_index = sphere_hit(obj_index, r, ray_tmin, ray_tmax)
             
 
-    if obj_type == 1: #quad
+    elif obj_type == 1:
+        
+        hit, t, p, front_face, normal, u, v, material_type, material_index = quad_hit(obj_index, r, ray_tmin, ray_tmax)
     
-        hit = True
-        current_Q = taichi_world.quad_Q[obj_index]
-        current_U = taichi_world.quad_U[obj_index]
-        current_V = taichi_world.quad_V[obj_index]
         
-        n = cross(current_U,current_V)
-        normal = n.normalized()
-        w = n / n.dot(n)
-        D = normal.dot(current_Q)
-        denom = normal.dot(r.direction)
-        if abs(denom) < 1e-8:
-            hit = False
-        t = (D - normal.dot(r.origin)) / denom
-        if not (ray_tmin <= t <= ray_tmax):
-            hit = False
+    
+    
+    elif obj_type == 2:
+        pass
+        #side_start_idx = taichi_world.box_prim_indices_start[obj_index]
         
-        intersection = r.origin + t * r.direction
-        p = intersection - current_Q
-        alpha = w.dot(cross(p, current_V))
-        beta = w.dot(cross(current_U, p))
         
-        if not (0 <= alpha <= 1) or not (0 <= beta <= 1):
-            hit = False
-        
-        if hit:
-            t = t
-            p = intersection
-            front_face, normal = set_face_normal(r, normal)
-            u = alpha
-            v = beta
-            material_type = taichi_world.quad_material_type[obj_index]
-            material_index = taichi_world.quad_material_index[obj_index]
+    
+    
             
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)
         

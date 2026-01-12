@@ -11,14 +11,20 @@ from objects import *
 from materials import *
 from textures import *
 from random import uniform, randint
+from BVH import make_BVH, flatten_bvh
 
 
 
 
 def init_world(world):
     
+    
+    for i, obj in enumerate(world.objects):
+        obj.prim_id = i
+    Prims_count = 0
     Sphere_count = 0
     Quad_count = 0
+    box_count = 0
     lambertian_count = 0
     metal_count = 0
     dielctric_count = 0
@@ -30,51 +36,136 @@ def init_world(world):
     image_texture_max_height = 0
     image_texture_total_width = 0
     
+    
     for obj in world.objects:
         
         if isinstance(obj, sphere):
+            Prims_count += 1
             Sphere_count += 1
+            if isinstance(obj.material, lambertian):
+                lambertian_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+                elif isinstance(obj.material.texture, perlin_noise):
+                    perlin_texture_count += 1
+                    
+                elif isinstance(obj.material.texture, image_texture):
+                    image_texture_count += 1
+                    image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                    image_texture_total_width += obj.material.texture.image.width
+                    
+                    
+            elif isinstance(obj.material, metal):
+                metal_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+            elif isinstance(obj.material, dielectric):
+                dielctric_count += 1
+            elif isinstance(obj.material, diffuse_light):
+                diffuse_light_count += 1
+            
         elif isinstance(obj, quad):
+            Prims_count += 1
             Quad_count += 1
+            if isinstance(obj.material, lambertian):
+                lambertian_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+                elif isinstance(obj.material.texture, perlin_noise):
+                    perlin_texture_count += 1
+                    
+                elif isinstance(obj.material.texture, image_texture):
+                    image_texture_count += 1
+                    image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                    image_texture_total_width += obj.material.texture.image.width
+                    
+                    
+            elif isinstance(obj.material, metal):
+                metal_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+            elif isinstance(obj.material, dielectric):
+                dielctric_count += 1
+            elif isinstance(obj.material, diffuse_light):
+                diffuse_light_count += 1
+            
+        elif isinstance(obj, box):
+            Prims_count += 1
+            box_count += 1
+            for side in obj.sides:
+                if isinstance(side, quad):
+                    Quad_count += 1
+                    if isinstance(side.material, lambertian):
+                        lambertian_count += 1
+                        if isinstance(side.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(side.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(side.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(side.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                        elif isinstance(side.material.texture, perlin_noise):
+                            perlin_texture_count += 1
+                            
+                        elif isinstance(side.material.texture, image_texture):
+                            image_texture_count += 1
+                            image_texture_max_height = max(side.material.texture.image.height, image_texture_max_height)
+                            image_texture_total_width += side.material.texture.image.width
+                            
+                            
+                    elif isinstance(side.material, metal):
+                        metal_count += 1
+                        if isinstance(side.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(side.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(side.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(side.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                    elif isinstance(side.material, dielectric):
+                        dielctric_count += 1
+                    elif isinstance(side.material, diffuse_light):
+                        diffuse_light_count += 1
+                
+            
+
         
-        if isinstance(obj.material, lambertian):
-            lambertian_count += 1
-            if isinstance(obj.material.texture, solid_color):
-                solid_color_count += 1
-                
-            elif isinstance(obj.material.texture, checker_texture):
-                checker_texture_count += 1
-                if isinstance(obj.material.texture.even, solid_color):
-                    solid_color_count += 1
-                if isinstance(obj.material.texture.odd, solid_color):
-                    solid_color_count += 1
-            elif isinstance(obj.material.texture, perlin_noise):
-                perlin_texture_count += 1
-                
-            elif isinstance(obj.material.texture, image_texture):
-                image_texture_count += 1
-                image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
-                image_texture_total_width += obj.material.texture.image.width
-                
-                
-        elif isinstance(obj.material, metal):
-            metal_count += 1
-            if isinstance(obj.material.texture, solid_color):
-                solid_color_count += 1
-                
-            elif isinstance(obj.material.texture, checker_texture):
-                checker_texture_count += 1
-                if isinstance(obj.material.texture.even, solid_color):
-                    solid_color_count += 1
-                if isinstance(obj.material.texture.odd, solid_color):
-                    solid_color_count += 1
-        elif isinstance(obj.material, dielectric):
-            dielctric_count += 1
-        elif isinstance(obj.material, diffuse_light):
-            diffuse_light_count += 1
+        
         
     
-    Prims_count = Sphere_count + Quad_count
+    
     
     Sphere_count = max(1,Sphere_count)
     Quad_count = max(1,Quad_count)
@@ -90,8 +181,18 @@ def init_world(world):
     image_texture_total_width = max(1,image_texture_total_width)
     image_texture_count = max(1,image_texture_count)
     
+    
+    global flag
+    flag = ti.field(ti.i32, shape = 1)
     global num_of_prim
     global prim_indices
+    global bvh_num_of_nodes
+    global bvh_node_min
+    global bvh_node_max
+    global bvh_node_left
+    global bvh_node_right
+    global bvh_node_prim_start
+    global bvh_node_prim_count
     global sphere_center0
     global sphere_center1
     global sphere_radius
@@ -127,9 +228,42 @@ def init_world(world):
     global image_texture_width_start
     global image_texture_width
     global image_texture_height
+    global box_prim_indices
+    global box_prim_indices_start
+    
+    
+    bvh_node = make_BVH(world.objects)
+    flatten_bvh(bvh_node)
+    
+    from BVH import bvh_nodes, bvh_primitive_indices
+    
+    
     
     
     num_of_prim = len(world.objects)
+    prim_indices = ti.field(ti.i32, shape= Prims_count)
+    prim_type = ti.field(ti.i32, shape= Prims_count)
+    prim_geo = ti.field(ti.i32, shape= Prims_count)
+    
+    bvh_node_min = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
+    bvh_node_max = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
+    bvh_node_left = ti.field(ti.i32, shape = len(bvh_nodes))
+    bvh_node_right = ti.field(ti.i32, shape = len(bvh_nodes))
+    bvh_node_prim_start = ti.field(ti.i32, shape = len(bvh_nodes))
+    bvh_node_prim_count = ti.field(ti.i32, shape = len(bvh_nodes))
+    bvh_num_of_nodes = len(bvh_nodes)
+    
+    for i in range(len(bvh_primitive_indices)):
+        prim_indices[i] = bvh_primitive_indices[i]
+    
+    for i in range(len(bvh_nodes)):
+        bvh_node_min[i] = bvh_nodes[i]['min']
+        bvh_node_max[i] = bvh_nodes[i]['max']
+        bvh_node_left[i] = bvh_nodes[i]['left']
+        bvh_node_right[i] = bvh_nodes[i]['right']
+        bvh_node_prim_start[i] = bvh_nodes[i]['first_prim']
+        bvh_node_prim_count[i] = bvh_nodes[i]['prim_count']
+    
     sphere_center0 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
     sphere_center1 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
     sphere_radius = ti.field(ti.f32, shape = Sphere_count)
@@ -142,9 +276,6 @@ def init_world(world):
     quad_material_type = ti.field(ti.i32, shape= Quad_count)
     quad_material_index = ti.field(ti.i32, shape= Quad_count)
     
-    prim_indices = ti.field(ti.i32, shape= Prims_count)
-    prim_type = ti.field(ti.i32, shape= Prims_count)
-    prim_geo = ti.field(ti.i32, shape= Prims_count)
     
     lambertian_texture_type = ti.field(ti.i32, shape = lambertian_count)
     lambertian_texture_index = ti.field(ti.i32, shape = lambertian_count)
@@ -202,12 +333,14 @@ def init_world(world):
     perlin_index = -1
     image_texture_index = -1
     image_width_start = 0
+    box_index = -1
+    
     
     
     
     for obj in world.objects:
         prim_index += 1
-        prim_indices[prim_index] = prim_index
+
         if isinstance(obj, sphere):
             sphere_index +=1
             prim_type[prim_index] = 0
@@ -381,3 +514,12 @@ def init_world(world):
                     solid_color_vec_index +=1
                     diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                     solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+        
+        elif isinstance(obj, box):
+            box_index += 1
+            prim_type[prim_index] = 2
+            prim_geo[prim_index] = box_index
+            box_prim_indices_start[box_index] = quad_index+1
+            
+            
+            
