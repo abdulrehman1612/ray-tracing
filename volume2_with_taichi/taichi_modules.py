@@ -412,8 +412,32 @@ def object_hit(obj_type, obj_index, r, ray_tmin, ray_tmax):
     
     
     elif obj_type == 2:
-        pass
-        #side_start_idx = taichi_world.box_prim_indices_start[obj_index]
+        
+        temp_hit = False
+        temp_t = -1.0
+        temp_p = ti.Vector([0,0,0],dt=ti.f32)
+        temp_front_face = False
+        temp_normal = ti.Vector([0,0,0],dt=ti.f32)
+        temp_u = -1.0
+        temp_v = -1.0
+        temp_material_type = -1
+        temp_material_index = -1
+        
+        
+        
+        closest = ray_tmax
+        side_start_idx = taichi_world.box_prim_indices_start[obj_index]
+        
+        for i in range(6):
+            temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = quad_hit(side_start_idx+i, r, ray_tmin, closest)
+            if temp_hit:
+                closest = temp_t
+                
+                hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+            
+            
+            
+        
         
         
     

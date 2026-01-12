@@ -21,10 +21,12 @@ def init_world(world):
     
     for i, obj in enumerate(world.objects):
         obj.prim_id = i
+    
     Prims_count = 0
     Sphere_count = 0
     Quad_count = 0
     box_count = 0
+    translate_count = 0
     lambertian_count = 0
     metal_count = 0
     dielctric_count = 0
@@ -35,6 +37,7 @@ def init_world(world):
     image_texture_count = 0
     image_texture_max_height = 0
     image_texture_total_width = 0
+    mini_bvh_count = 0
     
     
     for obj in world.objects:
@@ -120,7 +123,7 @@ def init_world(world):
         elif isinstance(obj, box):
             Prims_count += 1
             box_count += 1
-            for side in obj.sides:
+            for side in obj.sides.objects:
                 if isinstance(side, quad):
                     Quad_count += 1
                     if isinstance(side.material, lambertian):
@@ -159,6 +162,10 @@ def init_world(world):
                     elif isinstance(side.material, diffuse_light):
                         diffuse_light_count += 1
                 
+        elif isinstance(obj, translate):
+            Prims_count += 1
+            translate_count += 1
+            mini_bvh_count += len(obj.bvh_nodes)
             
 
         
@@ -169,6 +176,7 @@ def init_world(world):
     
     Sphere_count = max(1,Sphere_count)
     Quad_count = max(1,Quad_count)
+    box_count = max(1, box_count)
     lambertian_count = max(1,lambertian_count)
     metal_count = max(1,metal_count)
     dielctric_count = max(1, dielctric_count)
@@ -228,7 +236,6 @@ def init_world(world):
     global image_texture_width_start
     global image_texture_width
     global image_texture_height
-    global box_prim_indices
     global box_prim_indices_start
     
     
@@ -275,6 +282,9 @@ def init_world(world):
     quad_V = ti.Vector.field(3, ti.f32, shape=Quad_count)
     quad_material_type = ti.field(ti.i32, shape= Quad_count)
     quad_material_index = ti.field(ti.i32, shape= Quad_count)
+    
+    
+    box_prim_indices_start = ti.field(ti.i32, shape=box_count)
     
     
     lambertian_texture_type = ti.field(ti.i32, shape = lambertian_count)
@@ -520,6 +530,62 @@ def init_world(world):
             prim_type[prim_index] = 2
             prim_geo[prim_index] = box_index
             box_prim_indices_start[box_index] = quad_index+1
-            
+            for side in obj.sides.objects:
+                
+                if isinstance(side, quad):
+                    quad_index += 1
+                    quad_Q[quad_index] = ti.Vector(side.Q.as_list())
+                    quad_U[quad_index] = ti.Vector(side.U.as_list())
+                    quad_V[quad_index] = ti.Vector(side.V.as_list())
+                    
+                    if isinstance(side.material, lambertian):
+                        lambertian_index += 1
+                        quad_material_type[quad_index] = 0
+                        quad_material_index[quad_index] = lambertian_index
+                        
+                        if isinstance(side.material.texture, solid_color):
+                            solid_color_vec_index += 1
+                            lambertian_texture_type[lambertian_index] = 0
+                            lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(side.material.texture.albedo.as_list())
+                        
+                        elif isinstance(side.material.texture, checker_texture):
+                            checker_index += 1
+                            lambertian_texture_type[lambertian_index] = 1
+                            lambertian_texture_index[lambertian_index] = checker_index
+                            
+                            if isinstance(side.material.texture.even, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_even_type[checker_index] = 0
+                                checker_texture_even_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(side.material.texture.even.albedo.as_list())
+                            
+                            if isinstance(side.material.texture.odd, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_odd_type[checker_index] = 0
+                                checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(side.material.texture.odd.albedo.as_list())
+                            
+                            checker_texture_scale[checker_index] = side.material.texture.scale
+                        
+                        elif isinstance(side.material.texture, perlin_noise):
+                            perlin_index += 1
+                            lambertian_texture_type[lambertian_index] = 2
+                            lambertian_texture_index[lambertian_index] = perlin_index
+                            perlin_scale[perlin_index] = side.material.texture.scale
+                            
+                        elif isinstance(side.material.texture, image_texture):
+                            image_texture_index += 1
+                            lambertian_texture_type[lambertian_index] = 3
+                            lambertian_texture_index[lambertian_index] = image_texture_index
+                            image_texture_height[image_texture_index] = side.material.texture.image.height
+                            image_texture_width[image_texture_index] = side.material.texture.image.width
+                            image_texture_width_start[image_texture_index] = image_width_start
+                            
+                            for y in range(side.material.texture.image.height):
+                                for x in range(side.material.texture.image.width):
+                                    image_texture_data[y, image_width_start + x] = ti.Vector(sides.material.texture.image.pixels[y, x])
+                            
+                            image_width_start += side.material.texture.image.width   
             
             

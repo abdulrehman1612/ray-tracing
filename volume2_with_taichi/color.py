@@ -85,7 +85,7 @@ def ray_color(r, ray_tmin, ray_tmax, max_depth, background_color):
                     if hit_aabb(current_r, ray_tmin, closest_t, taichi_world.bvh_node_min[right_idx], taichi_world.bvh_node_max[right_idx]):
                         stack[top] = right_idx
                         top += 1    
-                        
+
                     
                     
             if hit_anything:

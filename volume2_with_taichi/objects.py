@@ -7,6 +7,7 @@ Created on Wed Jan  7 01:22:07 2026
 """
 from Vec3 import vec3
 from list_hittable import list_hittable
+from BVH
 
 class sphere:
     def __init__(self, center1, radius, material, center2 = vec3(0,0,0)):
@@ -58,6 +59,7 @@ class box:
     def __init__(self, a, b, mat):
         self.sides = list_hittable()
         self.material = None
+        self.type = 2
         
         min_ = vec3(min(a.x(),b.x()), min(a.y(),b.y()),min(a.z(),b.z()))
         max_ = vec3(max(a.x(),b.x()), max(a.y(),b.y()),max(a.z(),b.z()))
@@ -76,4 +78,21 @@ class box:
         self.min = min_
         self.max = max_
         self.centroid = (self.max+self.min) * 0.5
+
+class translate:
+    def __init__(self, objects: list_hittable, offset):
+        self.type = 3
+        self.offset = offset
+        self.objects = objects.objects
+        
+        for i, obj in enumerate(self.objects):
+            obj.prim_id = i
+        
+        self.bvh = BVH.make_BVH(self.objects)
+        BVH.flatten_bvh(self.bvh)
+        self.bvh_nodes = BVH.bvh_nodes
+        self.bvh_primitive_indices = BVH.bvh_primitive_indices
+        
+        
+        
         
