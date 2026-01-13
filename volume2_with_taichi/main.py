@@ -8,7 +8,7 @@ Created on Thu Jan  8 04:20:33 2026
 
 from camera import camera
 from list_hittable import list_hittable
-from objects import sphere, quad, box
+from objects import sphere, quad, box, translate
 from materials import lambertian, metal, dielectric, diffuse_light
 from Vec3 import vec3
 from textures import checker_texture, perlin_noise, image_texture
@@ -28,7 +28,7 @@ def main_1():
 
 
 def main_2():
-    cam = camera(1, 720, samples_per_pixel=1000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
+    cam = camera(1, 400, samples_per_pixel=1000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
     world = list_hittable()
     red   = lambertian(vec3(.65, .05, .05))
     white = lambertian(vec3(.73, .73, .73))
@@ -42,9 +42,17 @@ def main_2():
     world.add(quad(vec3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white))
     world.add(quad(vec3(0,0,555), vec3(555,0,0), vec3(0,555,0), white))
     
-    world.add(box(point3(130, 0, 65), point3(295, 165, 230), white))
-    world.add(box(point3(265, 0, 295), point3(430, 330, 460), white))
+    box1 = list_hittable()
+    box2 = list_hittable()
     
+    box1.add(box(point3(0,0,0), point3(165,330,165), white))
+    box2.add(box(point3(0,0,0), point3(165,165,165), white))
+    
+    world.add(translate(box1, vec3(265,0,295)))
+    world.add(translate(box2, vec3(130,0,65)))
+
+    
+
     cam.render(world)
     
 main_2()
@@ -119,4 +127,3 @@ def week1_final_render():
     
     cam.render(world)
 
-#week1_final_render()
