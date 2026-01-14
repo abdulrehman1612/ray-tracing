@@ -390,7 +390,7 @@ def sphere_hit(obj_index, r, ray_tmin, ray_tmax):
 @ti.func
 def box_hit(obj_index, r, ray_tmin, ray_tmax):
     
-    hit = True
+    hit = False
     t = -1.0
     p = ti.Vector([0,0,0],dt=ti.f32)
     front_face = False
@@ -430,10 +430,196 @@ def box_hit(obj_index, r, ray_tmin, ray_tmax):
 
 
 
+@ti.func
+def translate_hit(obj_index, r, ray_tmin, ray_tmax):
+    
+    hit = False
+    t = -1.0
+    p = ti.Vector([0,0,0],dt=ti.f32)
+    front_face = False
+    normal = ti.Vector([0,0,0],dt=ti.f32)
+    u = -1.0
+    v = -1.0
+    material_type = -1
+    material_index = -1
+    
+    offset = taichi_world.translate_offset[obj_index]
+    node_index = taichi_world.translate_parent_node[obj_index]
+    
+    offset_r  = Ray(origin= r.origin-offset, direction=r.direction, time=r.time ) 
+    
+    
+    stack = ti.Vector([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+    top = 0
+    stack[top] = node_index
+    top +=1
+    
+    
+    closest_t = ray_tmax
+    
+    
+    
+    while top > 0:
+        top -= 1
+        node_idx = stack[top]
+        
+        if taichi_world.translate_bvh_node_prim_start[node_idx] != -1:
+            
+            num_of_objects = taichi_world.translate_bvh_node_prim_count[node_idx]
+            
+            for i in range(num_of_objects):
+                
+                prim_idx = taichi_world.translate_prim_indices[taichi_world.translate_bvh_node_prim_start[node_idx]+i]
+                
+                current_obj_type = taichi_world.translate_prim_type[prim_idx]
+                
+                geo_idx = taichi_world.translate_prim_geo[prim_idx]
+                
+                if current_obj_type == 0:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = sphere_hit(geo_idx, offset_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        closest_t = temp_t
+                        temp_p += offset
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                    
+                elif current_obj_type == 1:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = quad_hit(geo_idx, offset_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        temp_p += offset
+                        closest_t = temp_t
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                
+                elif current_obj_type == 2:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = box_hit(geo_idx, offset_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        closest_t = temp_t
+                        temp_p += offset
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                
+                elif current_obj_type == 3:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = rotate_y_hit(geo_idx, offset_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        closest_t = temp_t
+                        temp_p += offset
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                
+                    
+        else:
+            
+            left_idx = taichi_world.translate_bvh_node_left[node_idx]
+            if hit_aabb(offset_r, ray_tmin, closest_t, taichi_world.translate_bvh_node_min[left_idx], taichi_world.translate_bvh_node_max[left_idx]):
+                stack[top] = left_idx
+                top += 1
+                
+                
+            right_idx = taichi_world.translate_bvh_node_right[node_idx]
+            if hit_aabb(offset_r, ray_tmin, closest_t, taichi_world.translate_bvh_node_min[right_idx], taichi_world.translate_bvh_node_max[right_idx]):
+                stack[top] = right_idx
+                top += 1 
+
+    return (hit, t, p, front_face, normal, u, v, material_type, material_index)
 
 
+@ti.func
+def rotate_y_hit(obj_index, r, ray_tmin, ray_tmax):
+    
+    hit = False
+    t = -1.0
+    p = ti.Vector([0,0,0],dt=ti.f32)
+    front_face = False
+    normal = ti.Vector([0,0,0],dt=ti.f32)
+    u = -1.0
+    v = -1.0
+    material_type = -1
+    material_index = -1
+    
+    angle = taichi_world.rotate_y_angle[obj_index]
+    node_index = taichi_world.rotate_y_parent_node[obj_index]
+    
+    cos_theta = ti.cos(angle)
+    sin_theta = ti.sin(angle)
+    
+    origin = ti.Vector([(cos_theta * r.origin[0]) - (sin_theta * r.origin[2]), r.origin[1], (sin_theta * r.origin[0]) + (cos_theta * r.origin[2])])
+        
+    direction = ti.Vector([(cos_theta * r.direction[0]) - (sin_theta * r.direction[2]), r.direction[1], (sin_theta * r.direction[0]) + (cos_theta * r.direction[2])])
+        
+    rotated_r = Ray(origin = origin, direction = direction, time= r.time)
+    
+    stack = ti.Vector([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+    top = 0
+    stack[top] = node_index
+    top +=1
+    
+    
+    closest_t = ray_tmax
+    
+    
+    
+    while top > 0:
+        top -= 1
+        node_idx = stack[top]
+        
+        if taichi_world.rotate_y_bvh_node_prim_start[node_idx] != -1:
+            
+            num_of_objects = taichi_world.rotate_y_bvh_node_prim_count[node_idx]
+            
+            for i in range(num_of_objects):
+                
+                prim_idx = taichi_world.rotate_y_prim_indices[taichi_world.rotate_y_bvh_node_prim_start[node_idx]+i]
+                
+                current_obj_type = taichi_world.rotate_y_prim_type[prim_idx]
+                
+                geo_idx = taichi_world.rotate_y_prim_geo[prim_idx]
+                
+                if current_obj_type == 0:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = sphere_hit(geo_idx, rotated_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        temp_p = ti.Vector([(cos_theta * temp_p[0]) + (sin_theta * temp_p[2]), temp_p[1],(-sin_theta * temp_p[0]) + (cos_theta * temp_p[2])])
+                        temp_normal = ti.Vector([(cos_theta * temp_normal[0]) + (sin_theta * temp_normal[2]), temp_normal[1], (-sin_theta * temp_normal[0]) + (cos_theta * temp_normal[2])])
+                        closest_t = temp_t
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                    
+                elif current_obj_type == 1:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = quad_hit(geo_idx, rotated_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        temp_p = ti.Vector([(cos_theta * temp_p[0]) + (sin_theta * temp_p[2]), temp_p[1],(-sin_theta * temp_p[0]) + (cos_theta * temp_p[2])])
+                        temp_normal = ti.Vector([(cos_theta * temp_normal[0]) + (sin_theta * temp_normal[2]), temp_normal[1], (-sin_theta * temp_normal[0]) + (cos_theta * temp_normal[2])])
+                        closest_t = temp_t
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                
+                elif current_obj_type == 2:
+                    
+                    temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = box_hit(geo_idx, rotated_r, ray_tmin, closest_t)
+                    if temp_hit:
+                        closest_t = temp_t
+                        temp_p = ti.Vector([(cos_theta * temp_p[0]) + (sin_theta * temp_p[2]), temp_p[1],(-sin_theta * temp_p[0]) + (cos_theta * temp_p[2])])
+                        temp_normal = ti.Vector([(cos_theta * temp_normal[0]) + (sin_theta * temp_normal[2]), temp_normal[1], (-sin_theta * temp_normal[0]) + (cos_theta * temp_normal[2])])
+                        hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
+                
+                
+                    
+        else:
+            
+            left_idx = taichi_world.rotate_y_bvh_node_left[node_idx]
+            if hit_aabb(rotated_r, ray_tmin, closest_t, taichi_world.rotate_y_bvh_node_min[left_idx], taichi_world.rotate_y_bvh_node_max[left_idx]):
+                stack[top] = left_idx
+                top += 1
+                
+                
+            right_idx = taichi_world.rotate_y_bvh_node_right[node_idx]
+            if hit_aabb(rotated_r, ray_tmin, closest_t, taichi_world.rotate_y_bvh_node_min[right_idx], taichi_world.rotate_y_bvh_node_max[right_idx]):
+                stack[top] = right_idx
+                top += 1 
 
-
+    return (hit, t, p, front_face, normal, u, v, material_type, material_index)
+    
+    
 
 
 @ti.func
@@ -458,8 +644,6 @@ def object_hit(obj_type, obj_index, r, ray_tmin, ray_tmax):
         
         hit, t, p, front_face, normal, u, v, material_type, material_index = quad_hit(obj_index, r, ray_tmin, ray_tmax)
     
-        
-    
     
     elif obj_type == 2:
         
@@ -468,81 +652,13 @@ def object_hit(obj_type, obj_index, r, ray_tmin, ray_tmax):
             
     elif obj_type == 3:
         
-        offset = taichi_world.translate_offset[obj_index]
-        node_index = taichi_world.translate_parent_node[obj_index]
-        
-        offset_r  = Ray(origin= r.origin-offset, direction=r.direction, time=r.time ) 
-        
-        
-        stack = ti.Vector([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-        top = 0
-        stack[top] = node_index
-        top +=1
-        
-        
-        closest_t = ray_tmax
-        
-        
-        
-        while top > 0:
-            top -= 1
-            node_idx = stack[top]
-            
-            if taichi_world.mini_bvh_node_prim_start[node_idx] != -1:
-                
-                num_of_objects = taichi_world.mini_bvh_node_prim_count[node_idx]
-                
-                for i in range(num_of_objects):
-                    
-                    prim_idx = taichi_world.mini_prim_indices[taichi_world.mini_bvh_node_prim_start[node_idx]+i]
-                    
-                    current_obj_type = taichi_world.mini_prim_type[prim_idx]
-                    
-                    geo_idx = taichi_world.mini_prim_geo[prim_idx]
-                    
-                    if current_obj_type == 0:
-                        
-                        temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = sphere_hit(geo_idx, offset_r, ray_tmin, closest_t)
-                        if temp_hit:
-                            closest_t = temp_t
-                            temp_p += offset
-                            hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
-                        
-                    elif current_obj_type == 1:
-                        
-                        temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = quad_hit(geo_idx, offset_r, ray_tmin, closest_t)
-                        if temp_hit:
-                            temp_p += offset
-                            closest_t = temp_t
-                            hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
-                    
-                    elif current_obj_type == 2:
-                        
-                        temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index = box_hit(geo_idx, offset_r, ray_tmin, closest_t)
-                        if temp_hit:
-                            closest_t = temp_t
-                            temp_p += offset
-                            hit, t, p, front_face, normal, u, v, material_type, material_index = temp_hit, temp_t, temp_p, temp_front_face, temp_normal, temp_u, temp_v, temp_material_type, temp_material_index
-                    
-
-                        
-            else:
-                
-                left_idx = taichi_world.mini_bvh_node_left[node_idx]
-                if hit_aabb(offset_r, ray_tmin, closest_t, taichi_world.mini_bvh_node_min[left_idx], taichi_world.mini_bvh_node_max[left_idx]):
-                    stack[top] = left_idx
-                    top += 1
-                    
-                    
-                right_idx = taichi_world.mini_bvh_node_right[node_idx]
-                if hit_aabb(offset_r, ray_tmin, closest_t, taichi_world.mini_bvh_node_min[right_idx], taichi_world.mini_bvh_node_max[right_idx]):
-                    stack[top] = right_idx
-                    top += 1 
-                    
+        hit, t, p, front_face, normal, u, v, material_type, material_index = rotate_y_hit(obj_index, r, ray_tmin, ray_tmax)
                     
         
         
+    elif obj_type == 4:
         
+        hit, t, p, front_face, normal, u, v, material_type, material_index = translate_hit(obj_index, r, ray_tmin, ray_tmax)
     
             
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)

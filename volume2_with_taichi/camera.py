@@ -29,7 +29,7 @@ class camera:
     
     def render(self, world):
         
-        ti.init(arch=ti.gpu, debug=False,kernel_profiler=False)
+        ti.init(arch=ti.gpu, debug=False,kernel_profiler=True)
         
         compile_time_start = time.time()
         print()
@@ -65,7 +65,8 @@ class camera:
         print()
         print("Rendering image...")
         
-        
+        run_kernal(image_width, image_height, zoom, rotate_camera, defocus_angle, focus_distance, samples_per_pixel,max_depth, background_color)
+        ti.sync()
         current_time = time.time()
         elapsed = int(current_time - start_time)
         hours = elapsed // 3600
@@ -75,10 +76,9 @@ class camera:
         print("Rendering Complete!")
         print(f"Time_taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
         from taichi_world import flag
-       
+        """
         while gui.running:
-            run_kernal(image_width, image_height, zoom, rotate_camera, defocus_angle, focus_distance, samples_per_pixel,max_depth, background_color)
-            ti.sync()
+            
             gui.set_image(taichi_kernal_main.image_pixels)
             camera_lookfrom = taichi_kernal_main.look_from[0].to_numpy().astype(np.float32)
             camera_lookat = taichi_kernal_main.look_at[0].to_numpy().astype(np.float32)
@@ -126,6 +126,6 @@ class camera:
             taichi_kernal_main.look_at[0][2] = camera_lookat[2]
             print(f"{flag[0]}")
             gui.show()
-            
+        """
             
         

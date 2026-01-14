@@ -92,7 +92,7 @@ def ray_color(r, ray_tmin, ray_tmax, max_depth, background_color):
                 
                 (scatter, scattered, atten, emitted) = material_scatter(current_r, (closest_t, p,front_face,normal,u,v,mat_type, mat_idx))
                 if scatter:
-                    taichi_world.flag[0] = 1
+                    
                     current_r = scattered
                     attenuation *= emitted+atten
                 else:

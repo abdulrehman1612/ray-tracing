@@ -8,6 +8,7 @@ Created on Wed Jan  7 01:22:07 2026
 from Vec3 import vec3
 from list_hittable import list_hittable
 import BVH
+import math
 
 class sphere:
     def __init__(self, center1, radius, material, center2 = vec3(0,0,0)):
@@ -114,4 +115,70 @@ class translate:
         self.min = global_min + self.offset 
         self.max = global_max + self.offset
         self.centroid = (self.max+self.min) * 0.5
+        
+class rotate_y:
+    def __init__(self, objects:list_hittable, angle):
+        self.type = 4
+        self.angle = math.radians(angle)
+        self.objects = objects.objects
+        
+        for i, obj in enumerate(self.objects):
+            obj.prim_id = i
+        
+        self.bvh = BVH.make_BVH(self.objects)
+        
+        
+        BVH.bvh_nodes = []
+        BVH.bvh_primitive_indices = []
+        BVH.flatten_bvh(self.bvh)
+        self.bvh_nodes = BVH.bvh_nodes
+        self.bvh_primitive_indices = BVH.bvh_primitive_indices
+        
+        
+        global_min = vec3(float('inf'), float('inf'), float('inf'))
+        global_max = vec3(-float('inf'), -float('inf'), -float('inf'))
+        
+        for obj in self.objects:
+            global_min = vec3(
+                min(global_min.x(), obj.min.x()),
+                min(global_min.y(), obj.min.y()),
+                min(global_min.z(), obj.min.z()))
+            
+            global_max = vec3(
+                max(global_max.x(), obj.max.x()),
+                max(global_max.y(), obj.max.y()),
+                max(global_max.z(), obj.max.z()))
+        
+        
+        sin_theta = math.sin(self.angle)
+        cos_theta = math.cos(self.angle)
+        min_corner = vec3(float('inf'), float('inf'), float('inf'))
+        max_corner = vec3(-float('inf'), -float('inf'), -float('inf'))
+        
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    x = i*global_max.x() + (1-i)*global_min.x()
+                    y = j*global_max.y() + (1-j)*global_min.y()
+                    z = k*global_max.z() + (1-k)*global_min.z()
+        
+                    newx = cos_theta * x + sin_theta * z
+                    newz = -sin_theta * x + cos_theta * z
+                    tester = vec3(newx, y, newz)
+        
+                    min_corner = vec3(
+                        min(min_corner.x(), tester.x()),
+                        min(min_corner.y(), tester.y()),
+                        min(min_corner.z(), tester.z())
+                    )
+                    max_corner = vec3(
+                        max(max_corner.x(), tester.x()),
+                        max(max_corner.y(), tester.y()),
+                        max(max_corner.z(), tester.z())
+                    )
+        
+        self.min = min_corner
+        self.max = max_corner
+        self.centroid = (self.max + self.min) * 0.5
+        
         

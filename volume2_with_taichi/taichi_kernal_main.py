@@ -64,7 +64,7 @@ def run_kernal(image_width: ti.i32,
     ray_tmin = ti.cast(0.001, ti.f32)
     ray_tmax = ti.cast(1e30, ti.f32)
     
-    ti.loop_config(parallelize=12, block_dim=32, block_dim_adaptive=True)
+    ti.loop_config(parallelize=12, block_dim=32, block_dim_adaptive=False)
     for i,j in ti.ndrange(image_width, image_height):
         current_color = ti.Vector([0.0,0.0,0.0])
         

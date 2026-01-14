@@ -8,7 +8,7 @@ Created on Thu Jan  8 04:20:33 2026
 
 from camera import camera
 from list_hittable import list_hittable
-from objects import sphere, quad, box, translate
+from objects import sphere, quad, box, translate, rotate_y
 from materials import lambertian, metal, dielectric, diffuse_light
 from Vec3 import vec3
 from textures import checker_texture, perlin_noise, image_texture
@@ -17,9 +17,9 @@ color = vec3
 point3 = vec3
 
 def main_1():
-    cam = camera(16/9, 1920, samples_per_pixel=10000, defocus_angle=0, focus_distance=10, max_depth=5, background_color=[1,1,1], lookfrom=[2,0,-1], lookat=[0,0,-1])
+    cam = camera(16/9, 5, samples_per_pixel=1, defocus_angle=0, focus_distance=10, max_depth=5, background_color=[1,1,1], lookfrom=[2,0,-1], lookat=[0,0,-1])
     world = list_hittable()
-    world.add(sphere(vec3(0,0,-1), 0.5, lambertian(image_texture("image.jpg"))))
+    world.add(sphere(vec3(0,0,-1), 0.5, lambertian(color(1,1,0))))
     world.add(sphere(vec3(0,-100.5,-1), 100, lambertian(checker_texture(vec3(0.5,0.5,0.5), vec3(0.1,0.1,0.1), 1))))
     world.add(sphere(vec3(-1,0,-1), 0.5, lambertian(image_texture("earthmap.jpg"))))
     cam.render(world)
@@ -28,7 +28,7 @@ def main_1():
 
 
 def main_2():
-    cam = camera(1, 400, samples_per_pixel=1000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
+    cam = camera(1, 1080, samples_per_pixel=1000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
     world = list_hittable()
     red   = lambertian(vec3(.65, .05, .05))
     white = lambertian(vec3(.73, .73, .73))
@@ -48,8 +48,16 @@ def main_2():
     box1.add(box(point3(0,0,0), point3(165,330,165), white))
     box2.add(box(point3(0,0,0), point3(165,165,165), white))
     
-    world.add(translate(box1, vec3(265,0,295)))
-    world.add(translate(box2, vec3(130,0,65)))
+    rotated_box1 = list_hittable()
+    rotated_box2 = list_hittable()
+    
+    rotated_box1.add(rotate_y(box1, 15))
+    rotated_box2.add(rotate_y(box2, -18))
+    
+    
+    
+    world.add(translate(rotated_box1, vec3(265,0,295)))
+    world.add(translate(rotated_box2, vec3(130,0,65)))
 
     
 
@@ -77,11 +85,11 @@ def main_3():
     
     cam.render(world)
 
-#main_3()
+
 
 def main_4():
     
-    cam = camera(16/9, 400,samples_per_pixel=10, lookfrom=[26,3,6], lookat=[0,2,0], zoom=7, background_color=[0,0,0])
+    cam = camera(16/9, 1920,samples_per_pixel=1000, lookfrom=[26,3,6], lookat=[0,2,0], zoom=7, background_color=[0,0,0])
     world = list_hittable()
     world.add(sphere(vec3(0,-1000,0), 1000, lambertian(perlin_noise(4))))
     world.add(sphere(vec3(0,2,0), 2, lambertian(perlin_noise(4))))
@@ -89,7 +97,7 @@ def main_4():
     world.add(sphere(vec3(0,7,0), 2, diffuse_light(vec3(4,4,4))))
     cam.render(world)
     
-#main_4()
+
 
 def week1_final_render():
     
