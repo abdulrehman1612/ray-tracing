@@ -31,4 +31,7 @@ class diffuse_light:
         self.type = 3
         
     
-
+class isotropic:
+    def __init__(self, albedo):
+        self.texture = solid_color(albedo)
+        self.type = 4

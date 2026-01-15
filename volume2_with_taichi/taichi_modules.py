@@ -189,6 +189,13 @@ def material_scatter(r, rec_tuple):
     elif mat_type == 3:
         albedo_index = taichi_world.diffuse_light_albedo[mat_idx]
         emitted = taichi_world.solid_color_vec[albedo_index]
+    
+    elif mat_type == 4:
+        scatter = True
+        scattered = Ray(origin = p, direction=random_unit_vector(), time = r.time)
+        texture_type = taichi_world.isotropic_texture_type[mat_idx]
+        texture_idx = taichi_world.isotropic_texture_index[mat_idx]
+        attenuation = texture_value(texture_type, texture_idx, u, v, p)
         
         
     return (scatter, scattered, attenuation, emitted)
@@ -619,6 +626,122 @@ def rotate_y_hit(obj_index, r, ray_tmin, ray_tmax):
 
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)
     
+
+
+
+
+@ti.func
+def volume_hit(obj_index, r, ray_tmin, ray_tmax):
+    hit = True
+    t = -1.0
+    p = ti.Vector([0,0,0],dt=ti.f32)
+    front_face = False
+    normal = ti.Vector([0,0,0],dt=ti.f32)
+    u = -1.0
+    v = -1.0
+    material_type = -1
+    material_index = -1
+    
+    
+    rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v = False, -1.0, ti.Vector([0,0,0],dt=ti.f32), False, ti.Vector([0,0,0],dt=ti.f32), -1.0, -1.0
+    rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v = False, -1.0, ti.Vector([0,0,0],dt=ti.f32), False, ti.Vector([0,0,0],dt=ti.f32), -1.0, -1.0
+
+    
+    volume_density = taichi_world.volume_density[obj_index]
+    obj_type = taichi_world.volume_prim_type[obj_index]
+    volume_obj_index = taichi_world.volume_prim_index[obj_index]
+    
+    temp_tmin = ti.cast(-1e30, ti.f32)
+    temp_tmax =  ti.cast(1e30, ti.f32)
+    
+    if obj_type == 0: 
+    
+        rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v, rec1_material_type, rec1_material_index = sphere_hit(volume_obj_index, r, temp_tmin, temp_tmax)
+        if not rec1_hit:
+            hit = False      
+        
+        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = sphere_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
+        if not rec2_hit:
+            hit = False
+    
+    elif obj_type == 1: 
+    
+        rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v, rec1_material_type, rec1_material_index = quad_hit(volume_obj_index, r, temp_tmin, temp_tmax)
+        if not rec1_hit:
+            hit = False      
+        
+        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = quad_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
+        if not rec2_hit:
+            hit = False
+    
+    elif obj_type == 2: 
+    
+        rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v, rec1_material_type, rec1_material_index = box_hit(volume_obj_index, r, temp_tmin, temp_tmax)
+        if not rec1_hit:
+            hit = False      
+        
+        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = box_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
+        if not rec2_hit:
+            hit = False
+            
+    elif obj_type == 3: 
+    
+        rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v, rec1_material_type, rec1_material_index = rotate_y_hit(volume_obj_index, r, temp_tmin, temp_tmax)
+        if not rec1_hit:
+            hit = False      
+        
+        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = rotate_y_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
+        if not rec2_hit:
+            hit = False
+    
+    elif obj_type == 4: 
+    
+        rec1_hit, rec1_t, rec1_p, rec1_front_face, rec1_normal, rec1_u, rec1_v, rec1_material_type, rec1_material_index = translate_hit(volume_obj_index, r, temp_tmin, temp_tmax)
+        if not rec1_hit:
+            hit = False      
+        
+        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = translate_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
+        if not rec2_hit:
+            hit = False
+
+    if (rec1_t < ray_tmin):
+            rec1_t = ray_tmin
+            
+    if (rec2_t > ray_tmax):
+        rec2_t = ray_tmax
+    
+    if (rec1_t >= rec2_t):
+        hit = False
+    
+    if (rec1_t < 0):
+        rec1_t = 0
+    
+    
+    ray_length = r.direction.norm()
+    distance_inside_boundary = (rec2_t - rec1_t) * ray_length
+    hit_distance = volume_density * ti.log(ti.random())
+    flag = True
+    flag = (hit_distance > distance_inside_boundary)
+    if flag:
+            hit = False
+    
+    
+    if hit:
+        t = rec1_t + hit_distance / ray_length 
+        p = r.origin + t * r.direction
+        normal = ti.Vector([1.0,0.0,0.0])
+        front_face = True
+        material_type = taichi_world.volume_material_type[obj_index]
+        material_index = taichi_world.volume_material_index[obj_index]
+
+        
+    
+    return (hit, t, p, front_face, normal, u, v, material_type, material_index)
+    
+    
+    
+    
+    
     
 
 
@@ -654,11 +777,14 @@ def object_hit(obj_type, obj_index, r, ray_tmin, ray_tmax):
         
         hit, t, p, front_face, normal, u, v, material_type, material_index = rotate_y_hit(obj_index, r, ray_tmin, ray_tmax)
                     
-        
-        
+           
     elif obj_type == 4:
         
         hit, t, p, front_face, normal, u, v, material_type, material_index = translate_hit(obj_index, r, ray_tmin, ray_tmax)
+    
+    elif obj_type == 5:
+        
+        hit, t, p, front_face, normal, u, v, material_type, material_index = volume_hit(obj_index, r, ray_tmin, ray_tmax)
     
             
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)

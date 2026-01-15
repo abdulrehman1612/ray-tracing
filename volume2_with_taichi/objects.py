@@ -180,5 +180,15 @@ class rotate_y:
         self.min = min_corner
         self.max = max_corner
         self.centroid = (self.max + self.min) * 0.5
+
+class volume:
+    def __init__(self, obj, density, mat):
+        self.object = obj
+        self.density = -1/density
+        self.min = obj.min
+        self.max = obj.max
+        self.centroid = obj.centroid
+        self.type = 5
+        self.material = mat
         
         

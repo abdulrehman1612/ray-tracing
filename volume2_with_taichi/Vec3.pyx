@@ -15,7 +15,7 @@ import array
 import numpy as np
 
 cdef class vec3:
-
+    cdef double e[3]
     
     def __init__(self, double x, double y, double z):
         self.e[0] = x

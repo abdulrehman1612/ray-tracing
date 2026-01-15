@@ -1737,12 +1737,12 @@ struct __pyx_opt_args_7cpython_11contextvars_get_value_no_default {
   PyObject *default_value;
 };
 
-/* "Vec3.pxd":9
- * """
+/* "Vec3.pyx":17
+ * import numpy as np
  * 
  * cdef class vec3:             # <<<<<<<<<<<<<<
  *     cdef double e[3]
- *     cpdef double x(self)
+ * 
 */
 struct __pyx_obj_4Vec3_vec3 {
   PyObject_HEAD
@@ -1751,14 +1751,6 @@ struct __pyx_obj_4Vec3_vec3 {
 };
 
 
-
-/* "Vec3.pyx":17
- * import numpy as np
- * 
- * cdef class vec3:             # <<<<<<<<<<<<<<
- * 
- * 
-*/
 
 struct __pyx_vtabstruct_4Vec3_vec3 {
   double (*x)(struct __pyx_obj_4Vec3_vec3 *, int __pyx_skip_dispatch);
@@ -4798,7 +4790,7 @@ static CYTHON_INLINE void __pyx_f_7cpython_5array_zero(arrayobject *__pyx_v_self
 }
 
 /* "Vec3.pyx":20
- * 
+ *     cdef double e[3]
  * 
  *     def __init__(self, double x, double y, double z):             # <<<<<<<<<<<<<<
  *         self.e[0] = x
@@ -4920,7 +4912,7 @@ static int __pyx_pf_4Vec3_4vec3___init__(struct __pyx_obj_4Vec3_vec3 *__pyx_v_se
   (__pyx_v_self->e[2]) = __pyx_v_z;
 
   /* "Vec3.pyx":20
- * 
+ *     cdef double e[3]
  * 
  *     def __init__(self, double x, double y, double z):             # <<<<<<<<<<<<<<
  *         self.e[0] = x
