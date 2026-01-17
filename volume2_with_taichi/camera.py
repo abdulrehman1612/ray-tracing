@@ -27,7 +27,7 @@ class camera:
         self.max_depth = max_depth
         self.background_color = background_color
     
-    def render(self, world):
+    def render(self, world, realtime = False):
         
         ti.init(arch=ti.gpu, debug=False,kernel_profiler=False)
         
@@ -78,54 +78,82 @@ class camera:
         from taichi_world import flag
         print(f"{flag[0]}")
         
-        while gui.running:
+        if not realtime:
             
-            gui.set_image(taichi_kernal_main.image_pixels)
-            camera_lookfrom = taichi_kernal_main.look_from[0].to_numpy().astype(np.float32)
-            camera_lookat = taichi_kernal_main.look_at[0].to_numpy().astype(np.float32)
-            forward = (camera_lookat- camera_lookfrom)
+            while gui.running:
+                for e in gui.get_events(gui.PRESS):
+                    if e.key == 's':
+                        if ti.GUI.CTRL in e.modifier:
+                            gui.set_image(taichi_kernal_main.image_pixels)
+                            gui.show(file="image.png")
+                    if e.key == gui.ESCAPE:
+                        gui.close()
+                gui.set_image(taichi_kernal_main.image_pixels)
+                gui.show()
+        else:
             
-            forward /= np.linalg.norm(forward)
-            up = np.array([0.0,1.0,0.0])
-            right = np.cross(forward, up)
-            right /= np.linalg.norm(right)/0.5
-            step = 5
-            for e in gui.get_events(gui.PRESS):
-                if e.key == gui.ESCAPE:
-                    gui.running = False
-                if e.key == 'a':
-                    camera_lookfrom -= right * step
-                    camera_lookat   -= right * step
-                    
-                if e.key == 'd':
-                    camera_lookfrom += right * step
-                    camera_lookat   += right * step
-                if e.key == 's':
-                    camera_lookfrom -= forward * step
-                    camera_lookat   -= forward * step
-                    
-                if e.key == 'w':
-                    camera_lookfrom += forward * step
-                    camera_lookat   += forward * step
+            movement_sensitivity = gui.slider('Movement Sensitivity', 0.1, 10, step=0.1)
+            camera_sensitivity = gui.slider('Camera Sensitivity', 0.1, 1, step=0.1)
+            
+            
+            while gui.running:
                 
-                if e.key == ti.GUI.UP:
-                    camera_lookat += np.array([0,step,0])/2
-                if e.key == ti.GUI.DOWN:
-                    camera_lookat -= np.array([0,step,0])/2
-                if e.key == ti.GUI.LEFT:
-                    camera_lookat   -= (right * step)*2
-                if e.key == ti.GUI.RIGHT:
-                    camera_lookat   += (right * step)*2
+                gui.set_image(taichi_kernal_main.image_pixels)
+                gui.show()
+                
+                camera_sensitivity.value
+                
+                camera_lookfrom = taichi_kernal_main.look_from[0].to_numpy().astype(np.float32)
+                camera_lookat = taichi_kernal_main.look_at[0].to_numpy().astype(np.float32)
+                forward = (camera_lookat- camera_lookfrom)
+                
+                forward /= np.linalg.norm(forward)
+                up = np.array([0.0,1.0,0.0])
+                right = np.cross(forward, up)
+                right /= np.linalg.norm(right)/0.5
+                
+                for e in gui.get_events(gui.PRESS):
+                    if e.key == gui.ESCAPE:
+                        gui.close()
+                    if e.key == 'a':
+                        camera_lookfrom -= right * movement_sensitivity.value
+                        camera_lookat   -= right * movement_sensitivity.value
+                        
+                    if e.key == 'd':
+                        camera_lookfrom += right * movement_sensitivity.value
+                        camera_lookat   += right * movement_sensitivity.value
+                    if e.key == 's':
+                        camera_lookfrom -= forward * movement_sensitivity.value
+                        camera_lookat   -= forward * movement_sensitivity.value
+                        
+                    if e.key == 'w':
+                        camera_lookfrom += forward * movement_sensitivity.value
+                        camera_lookat   += forward * movement_sensitivity.value
                     
+                    if e.key == ti.GUI.UP:
+                        camera_lookat += np.array([0,camera_sensitivity.value,0])/2
+                    if e.key == ti.GUI.DOWN:
+                        camera_lookat -= np.array([0,camera_sensitivity.value,0])/2
+                    if e.key == ti.GUI.LEFT:
+                        camera_lookat   -= (right * camera_sensitivity.value)*2
+                    if e.key == ti.GUI.RIGHT:
+                        camera_lookat   += (right * camera_sensitivity.value)*2
+                    if e.key == 's':
+                        if ti.GUI.CTRL in e.modifier:
+                            gui.set_image(taichi_kernal_main.image_pixels)
+                            gui.show(file="image.png")
                     
-                    
-            taichi_kernal_main.look_from[0][0] = camera_lookfrom[0]
-            taichi_kernal_main.look_from[0][1] = camera_lookfrom[1]
-            taichi_kernal_main.look_from[0][2] = camera_lookfrom[2]
-            taichi_kernal_main.look_at[0][0] = camera_lookat[0]
-            taichi_kernal_main.look_at[0][1] = camera_lookat[1]
-            taichi_kernal_main.look_at[0][2] = camera_lookat[2]
-            gui.show()
-        
+                        
+                        
+                        
+                taichi_kernal_main.look_from[0][0] = camera_lookfrom[0]
+                taichi_kernal_main.look_from[0][1] = camera_lookfrom[1]
+                taichi_kernal_main.look_from[0][2] = camera_lookfrom[2]
+                taichi_kernal_main.look_at[0][0] = camera_lookat[0]
+                taichi_kernal_main.look_at[0][1] = camera_lookat[1]
+                taichi_kernal_main.look_at[0][2] = camera_lookat[2]
+                
+                run_kernal(image_width, image_height, zoom, rotate_camera, defocus_angle, focus_distance, samples_per_pixel,max_depth, background_color)
+                ti.sync()
             
         

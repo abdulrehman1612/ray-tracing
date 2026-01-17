@@ -23,6 +23,8 @@ def init_world(world):
         obj.prim_id = i
     
     
+    #global names for debugging purposes
+    """
     global Prims_count
     global Sphere_count
     global Quad_count
@@ -45,7 +47,7 @@ def init_world(world):
     global translate_bvh_count
     global volume_count
     global isotropic_count
-
+    """
     
     
     Prims_count = 0
@@ -1144,233 +1146,236 @@ def init_world(world):
     volume_count = max(1, volume_count)
     isotropic_count = max(1, isotropic_count)
     
+    
+    if Prims_count > 0:
+        global prim_indices
+        global prim_type
+        global prim_geo
+        global bvh_node_min
+        global bvh_node_max
+        global bvh_node_left
+        global bvh_node_right
+        global bvh_node_prim_start
+        global bvh_node_prim_count
+        
+        import BVH
+        BVH.bvh_nodes = []
+        BVH.bvh_primitive_indices = []
+        bvh_node = make_BVH(world.objects)
+        flatten_bvh(bvh_node)
+        from BVH import bvh_nodes, bvh_primitive_indices
+        prim_indices = ti.field(ti.i32, shape= Prims_count)
+        prim_type = ti.field(ti.i32, shape= Prims_count)
+        prim_geo = ti.field(ti.i32, shape= Prims_count)
+        bvh_node_min = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
+        bvh_node_max = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
+        bvh_node_left = ti.field(ti.i32, shape = len(bvh_nodes))
+        bvh_node_right = ti.field(ti.i32, shape = len(bvh_nodes))
+        bvh_node_prim_start = ti.field(ti.i32, shape = len(bvh_nodes))
+        bvh_node_prim_count = ti.field(ti.i32, shape = len(bvh_nodes))
+        
+        for i in range(len(bvh_primitive_indices)):
+            prim_indices[i] = bvh_primitive_indices[i]
+        
+        for i in range(len(bvh_nodes)):
+            bvh_node_min[i] = bvh_nodes[i]['min']
+            bvh_node_max[i] = bvh_nodes[i]['max']
+            bvh_node_left[i] = bvh_nodes[i]['left']
+            bvh_node_right[i] = bvh_nodes[i]['right']
+            bvh_node_prim_start[i] = bvh_nodes[i]['first_prim']
+            bvh_node_prim_count[i] = bvh_nodes[i]['prim_count']
+    
+    
+    if Sphere_count > 0:
+        global sphere_center0
+        global sphere_center1
+        global sphere_radius
+        global sphere_material_type
+        global sphere_material_index
+        
+        sphere_center0 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
+        sphere_center1 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
+        sphere_radius = ti.field(ti.f32, shape = Sphere_count)
+        sphere_material_type = ti.field(ti.i32, shape= Sphere_count)
+        sphere_material_index = ti.field(ti.i32, shape= Sphere_count)
+    
+    if Quad_count > 0:
+        global quad_Q
+        global quad_U
+        global quad_V
+        global quad_material_type
+        global quad_material_index
+        
+        quad_Q = ti.Vector.field(3, ti.f32, shape=Quad_count)
+        quad_U = ti.Vector.field(3, ti.f32, shape=Quad_count)
+        quad_V = ti.Vector.field(3, ti.f32, shape=Quad_count)
+        quad_material_type = ti.field(ti.i32, shape= Quad_count)
+        quad_material_index = ti.field(ti.i32, shape= Quad_count)
+    
+    if box_count > 0:
+        global box_prim_indices_start
+        box_prim_indices_start = ti.field(ti.i32, shape=box_count)
+    
+    if rotate_y_count > 0:
+        global rotate_y_angle
+        global rotate_y_parent_node
+        global rotate_y_prim_indices
+        global rotate_y_prim_type
+        global rotate_y_prim_geo
+        global rotate_y_bvh_node_min
+        global rotate_y_bvh_node_max
+        global rotate_y_bvh_node_left
+        global rotate_y_bvh_node_right
+        global rotate_y_bvh_node_prim_start
+        global rotate_y_bvh_node_prim_count
+        
+        rotate_y_parent_node = ti.field(ti.i32, shape = rotate_y_count)
+        rotate_y_angle = ti.field(ti.f32, shape = translate_count)
+        rotate_y_prim_indices = ti.field(ti.i32, shape = rotate_y_prim_count)
+        rotate_y_prim_geo = ti.field(ti.i32, shape = rotate_y_prim_count)
+        rotate_y_prim_type = ti.field(ti.i32, shape = rotate_y_prim_count)
+        rotate_y_bvh_node_min = ti.Vector.field(3, ti.f32, shape = rotate_y_bvh_count)
+        rotate_y_bvh_node_max = ti.Vector.field(3, ti.f32, shape = rotate_y_bvh_count)
+        rotate_y_bvh_node_left = ti.field(ti.i32, shape = rotate_y_bvh_count)
+        rotate_y_bvh_node_right = ti.field(ti.i32, shape = rotate_y_bvh_count)
+        rotate_y_bvh_node_prim_start = ti.field(ti.i32, shape = rotate_y_bvh_count)
+        rotate_y_bvh_node_prim_count = ti.field(ti.i32, shape = rotate_y_bvh_count)
+        
+    if translate_count > 0:
+        global translate_offset
+        global translate_parent_node
+        global translate_prim_indices
+        global translate_prim_type
+        global translate_prim_geo
+        global translate_bvh_node_min
+        global translate_bvh_node_max
+        global translate_bvh_node_left
+        global translate_bvh_node_right
+        global translate_bvh_node_prim_start
+        global translate_bvh_node_prim_count
+        
+        translate_offset = ti.Vector.field(3, ti.f32, shape = translate_count)
+        translate_parent_node = ti.field(ti.i32, shape = translate_count)
+        translate_prim_indices = ti.field(ti.i32, shape = translate_prim_count)
+        translate_prim_geo = ti.field(ti.i32, shape = translate_prim_count)
+        translate_prim_type = ti.field(ti.i32, shape = translate_prim_count)
+        translate_bvh_node_min = ti.Vector.field(3, ti.f32, shape = translate_bvh_count)
+        translate_bvh_node_max = ti.Vector.field(3, ti.f32, shape = translate_bvh_count)
+        translate_bvh_node_left = ti.field(ti.i32, shape = translate_bvh_count)
+        translate_bvh_node_right = ti.field(ti.i32, shape = translate_bvh_count)
+        translate_bvh_node_prim_start = ti.field(ti.i32, shape = translate_bvh_count)
+        translate_bvh_node_prim_count = ti.field(ti.i32, shape = translate_bvh_count)
+    
+    
+    if volume_count > 0:
+        global volume_density
+        global volume_prim_type
+        global volume_prim_index
+        global volume_material_index
+        global volume_material_type
+        
+        volume_density = ti.field(ti.f32, shape = volume_count)
+        volume_prim_type = ti.field(ti.i32, shape = volume_count)
+        volume_prim_index = ti.field(ti.i32, shape = volume_count)
+        volume_material_type = ti.field(ti.i32, shape= volume_count)
+        volume_material_index = ti.field(ti.i32, shape= volume_count)
+    
+    if lambertian_count > 0:
+        global lambertian_texture_type
+        global lambertian_texture_index
+        
+        lambertian_texture_type = ti.field(ti.i32, shape = lambertian_count)
+        lambertian_texture_index = ti.field(ti.i32, shape = lambertian_count)
+    
+    if metal_count > 0:
+        global metal_texture_type
+        global metal_texture_index
+        global metal_fuzz
+        
+        metal_texture_type = ti.field(ti.i32, shape = metal_count)
+        metal_texture_index = ti.field(ti.i32, shape = metal_count)
+        metal_fuzz = ti.field(ti.f32, shape = metal_count)
+    
+    if dielctric_count > 0:
+        global dielectric_refractive_index
+        
+        dielectric_refractive_index = ti.field(ti.f32, shape=dielctric_count)
+    
+    if diffuse_light_count > 0:
+        global diffuse_light_albedo
+        
+        diffuse_light_albedo = ti.field(ti.i32, shape = diffuse_light_count)
+    
+    if isotropic_count > 0:
+        global isotropic_texture_type
+        global isotropic_texture_index
+        
+        isotropic_texture_type = ti.field(ti.i32, shape = isotropic_count)
+        isotropic_texture_index = ti.field(ti.i32, shape = isotropic_count)
+    
+    if solid_color_count > 0:
+        global solid_color_vec
+        
+        solid_color_vec = ti.Vector.field(3, ti.f32, shape=solid_color_count)
+        
+    if checker_texture_count > 0:
+        global checker_texture_odd_type
+        global checker_texture_odd_index
+        global checker_texture_even_type
+        global checker_texture_even_index
+        global checker_texture_scale
+        
+        checker_texture_odd_type = ti.field(ti.i32, shape = checker_texture_count)
+        checker_texture_odd_index = ti.field(ti.i32, shape = checker_texture_count)
+        checker_texture_even_type = ti.field(ti.i32, shape = checker_texture_count)
+        checker_texture_even_index = ti.field(ti.i32, shape = checker_texture_count)
+        checker_texture_scale = ti.field(ti.f32, shape = checker_texture_count)
+    
+    if perlin_texture_count > 0:
+        global perlin_random_vec
+        global perlin_perm_x
+        global perlin_perm_y
+        global perlin_perm_z
+        global perlin_c
+        global perlin_scale
+        
+        perlin_scale = ti.field(ti.f32, shape = perlin_texture_count)
+        perlin_random_vec = ti.Vector.field(3, ti.f32, shape = 256)
+        perlin_perm_x = ti.field(ti.i32, 256)
+        perlin_perm_y = ti.field(ti.i32, 256)
+        perlin_perm_z = ti.field(ti.i32, 256)
+        perlin_c = ti.Vector.field(3,ti.f32 ,shape=(2,2,2))
+        
+        for i in range(256):
+            perlin_random_vec[i] = ti.Vector([uniform(-1, 1),uniform(-1, 1),uniform(-1, 1)])
+            perlin_perm_x[i] = i
+            perlin_perm_y[i] = i
+            perlin_perm_z[i] = i
+            
+        for i in range(255, 0,-1):
+            target = randint(0, i)
+            perlin_perm_x[i], perlin_perm_x[target] = perlin_perm_x[target], perlin_perm_x[i]
+            target = randint(0, i)
+            perlin_perm_y[i], perlin_perm_y[target] = perlin_perm_y[target], perlin_perm_y[i]
+            target = randint(0, i)
+            perlin_perm_z[i], perlin_perm_z[target] = perlin_perm_z[target], perlin_perm_z[i]
+        
+        if image_texture_count > 0:
+            global image_texture_data
+            global image_texture_width_start
+            global image_texture_width
+            global image_texture_height
+            
+            image_texture_data = ti.Vector.field(3, ti.f32, shape = (image_texture_max_height, image_texture_total_width))
+            image_texture_height = ti.field(ti.i32, image_texture_count)
+            image_texture_width = ti.field(ti.i32, image_texture_count)
+            image_texture_width_start = ti.field(ti.i32, image_texture_count)
+        
+    
     global flag
     flag = ti.field(ti.i32, shape = 1)
-    global num_of_prim
-    global prim_indices
-    global bvh_num_of_nodes
-    global bvh_node_min
-    global bvh_node_max
-    global bvh_node_left
-    global bvh_node_right
-    global bvh_node_prim_start
-    global bvh_node_prim_count
-    global sphere_center0
-    global sphere_center1
-    global sphere_radius
-    global sphere_material_type
-    global sphere_material_index
-    global quad_Q
-    global quad_U
-    global quad_V
-    global quad_material_type
-    global quad_material_index
-    global prim_type
-    global prim_geo
-    global lambertian_texture_type
-    global lambertian_texture_index
-    global metal_texture_type
-    global metal_texture_index
-    global metal_fuzz
-    global dielectric_refractive_index
-    global diffuse_light_albedo
-    global solid_color_vec
-    global checker_texture_odd_type
-    global checker_texture_odd_index
-    global checker_texture_even_type
-    global checker_texture_even_index
-    global checker_texture_scale
-    global perlin_random_vec
-    global perlin_perm_x
-    global perlin_perm_y
-    global perlin_perm_z
-    global perlin_c
-    global perlin_scale
-    global image_texture_data
-    global image_texture_width_start
-    global image_texture_width
-    global image_texture_height
-    global box_prim_indices_start
     
-    global rotate_y_angle
-    global rotate_y_parent_node
-    
-    global translate_offset
-    global translate_parent_node
-    
-    global rotate_y_prim_indices
-    global rotate_y_prim_type
-    global rotate_y_prim_geo
-    global rotate_y_bvh_offset
-    global rotate_y_bvh_num_of_nodes
-    global rotate_y_bvh_node_min
-    global rotate_y_bvh_node_max
-    global rotate_y_bvh_node_left
-    global rotate_y_bvh_node_right
-    global rotate_y_bvh_node_prim_start
-    global rotate_y_bvh_node_prim_count
-    
-    global translate_prim_indices
-    global translate_prim_type
-    global translate_prim_geo
-    global translate_bvh_offset
-    global translate_bvh_num_of_nodes
-    global translate_bvh_node_min
-    global translate_bvh_node_max
-    global translate_bvh_node_left
-    global translate_bvh_node_right
-    global translate_bvh_node_prim_start
-    global translate_bvh_node_prim_count
-    
-    global volume_density
-    global volume_prim_type
-    global volume_prim_index
-    global volume_material_index
-    global volume_material_type
-    
-    global isotropic_texture_type
-    global isotropic_texture_index
-    
-    
-    
-    import BVH
-    BVH.bvh_nodes = []
-    BVH.bvh_primitive_indices = []
-    
-    bvh_node = make_BVH(world.objects)
-    flatten_bvh(bvh_node)
-    
-    
-    from BVH import bvh_nodes, bvh_primitive_indices
-    
-    
-    
-    
-    prim_indices = ti.field(ti.i32, shape= Prims_count)
-    prim_type = ti.field(ti.i32, shape= Prims_count)
-    prim_geo = ti.field(ti.i32, shape= Prims_count)
-    
-    bvh_node_min = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
-    bvh_node_max = ti.Vector.field(3, ti.f32, shape = len(bvh_nodes))
-    bvh_node_left = ti.field(ti.i32, shape = len(bvh_nodes))
-    bvh_node_right = ti.field(ti.i32, shape = len(bvh_nodes))
-    bvh_node_prim_start = ti.field(ti.i32, shape = len(bvh_nodes))
-    bvh_node_prim_count = ti.field(ti.i32, shape = len(bvh_nodes))
-    
-    
-    for i in range(len(bvh_primitive_indices)):
-        prim_indices[i] = bvh_primitive_indices[i]
-    
-    for i in range(len(bvh_nodes)):
-        bvh_node_min[i] = bvh_nodes[i]['min']
-        bvh_node_max[i] = bvh_nodes[i]['max']
-        bvh_node_left[i] = bvh_nodes[i]['left']
-        bvh_node_right[i] = bvh_nodes[i]['right']
-        bvh_node_prim_start[i] = bvh_nodes[i]['first_prim']
-        bvh_node_prim_count[i] = bvh_nodes[i]['prim_count']
-    
-    sphere_center0 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
-    sphere_center1 = ti.Vector.field(3, ti.f32, shape=Sphere_count)
-    sphere_radius = ti.field(ti.f32, shape = Sphere_count)
-    sphere_material_type = ti.field(ti.i32, shape= Sphere_count)
-    sphere_material_index = ti.field(ti.i32, shape= Sphere_count)
-    
-    quad_Q = ti.Vector.field(3, ti.f32, shape=Quad_count)
-    quad_U = ti.Vector.field(3, ti.f32, shape=Quad_count)
-    quad_V = ti.Vector.field(3, ti.f32, shape=Quad_count)
-    quad_material_type = ti.field(ti.i32, shape= Quad_count)
-    quad_material_index = ti.field(ti.i32, shape= Quad_count)
-    
-    
-    box_prim_indices_start = ti.field(ti.i32, shape=box_count)
-    
-    lambertian_texture_type = ti.field(ti.i32, shape = lambertian_count)
-    lambertian_texture_index = ti.field(ti.i32, shape = lambertian_count)
-    metal_texture_type = ti.field(ti.i32, shape = metal_count)
-    metal_texture_index = ti.field(ti.i32, shape = metal_count)
-    metal_fuzz = ti.field(ti.f32, shape = metal_count)
-    
-    dielectric_refractive_index = ti.field(ti.f32, shape=dielctric_count)
-    
-    diffuse_light_albedo = ti.field(ti.i32, shape = diffuse_light_count)
-    
-    solid_color_vec = ti.Vector.field(3, ti.f32, shape=solid_color_count)
-    
-    
-    checker_texture_odd_type = ti.field(ti.i32, shape = checker_texture_count)
-    checker_texture_odd_index = ti.field(ti.i32, shape = checker_texture_count)
-    checker_texture_even_type = ti.field(ti.i32, shape = checker_texture_count)
-    checker_texture_even_index = ti.field(ti.i32, shape = checker_texture_count)
-    checker_texture_scale = ti.field(ti.f32, shape = checker_texture_count)
-    
-    image_texture_data = ti.Vector.field(3, ti.f32, shape = (image_texture_max_height, image_texture_total_width))
-    image_texture_height = ti.field(ti.i32, image_texture_count)
-    image_texture_width = ti.field(ti.i32, image_texture_count)
-    image_texture_width_start = ti.field(ti.i32, image_texture_count)
-    
-    perlin_scale = ti.field(ti.f32, shape = perlin_texture_count)
-    perlin_random_vec = ti.Vector.field(3, ti.f32, shape = 256)
-    perlin_perm_x = ti.field(ti.i32, 256)
-    perlin_perm_y = ti.field(ti.i32, 256)
-    perlin_perm_z = ti.field(ti.i32, 256)
-    perlin_c = ti.Vector.field(3,ti.f32 ,shape=(2,2,2))
-    
-    for i in range(256):
-        perlin_random_vec[i] = ti.Vector([uniform(-1, 1),uniform(-1, 1),uniform(-1, 1)])
-        perlin_perm_x[i] = i
-        perlin_perm_y[i] = i
-        perlin_perm_z[i] = i
-        
-    for i in range(255, 0,-1):
-        target = randint(0, i)
-        perlin_perm_x[i], perlin_perm_x[target] = perlin_perm_x[target], perlin_perm_x[i]
-        target = randint(0, i)
-        perlin_perm_y[i], perlin_perm_y[target] = perlin_perm_y[target], perlin_perm_y[i]
-        target = randint(0, i)
-        perlin_perm_z[i], perlin_perm_z[target] = perlin_perm_z[target], perlin_perm_z[i]
-    
-    
-    rotate_y_parent_node = ti.field(ti.i32, shape = rotate_y_count)
-    rotate_y_angle = ti.field(ti.f32, shape = translate_count)
-    
-    rotate_y_prim_indices = ti.field(ti.i32, shape = rotate_y_prim_count)
-    rotate_y_prim_geo = ti.field(ti.i32, shape = rotate_y_prim_count)
-    rotate_y_prim_type = ti.field(ti.i32, shape = rotate_y_prim_count)
-    
-    rotate_y_bvh_node_min = ti.Vector.field(3, ti.f32, shape = rotate_y_bvh_count)
-    rotate_y_bvh_node_max = ti.Vector.field(3, ti.f32, shape = rotate_y_bvh_count)
-    rotate_y_bvh_node_left = ti.field(ti.i32, shape = rotate_y_bvh_count)
-    rotate_y_bvh_node_right = ti.field(ti.i32, shape = rotate_y_bvh_count)
-    rotate_y_bvh_node_prim_start = ti.field(ti.i32, shape = rotate_y_bvh_count)
-    rotate_y_bvh_node_prim_count = ti.field(ti.i32, shape = rotate_y_bvh_count)
-    
-    
-    translate_offset = ti.Vector.field(3, ti.f32, shape = translate_count)
-    translate_parent_node = ti.field(ti.i32, shape = translate_count)
-    
-    translate_prim_indices = ti.field(ti.i32, shape = translate_prim_count)
-    translate_prim_geo = ti.field(ti.i32, shape = translate_prim_count)
-    translate_prim_type = ti.field(ti.i32, shape = translate_prim_count)
-    
-    translate_bvh_node_min = ti.Vector.field(3, ti.f32, shape = translate_bvh_count)
-    translate_bvh_node_max = ti.Vector.field(3, ti.f32, shape = translate_bvh_count)
-    translate_bvh_node_left = ti.field(ti.i32, shape = translate_bvh_count)
-    translate_bvh_node_right = ti.field(ti.i32, shape = translate_bvh_count)
-    translate_bvh_node_prim_start = ti.field(ti.i32, shape = translate_bvh_count)
-    translate_bvh_node_prim_count = ti.field(ti.i32, shape = translate_bvh_count)
-    
-    
-    
-    volume_density = ti.field(ti.f32, shape = volume_count)
-    volume_prim_type = ti.field(ti.i32, shape = volume_count)
-    volume_prim_index = ti.field(ti.i32, shape = volume_count)
-    volume_material_type = ti.field(ti.i32, shape= volume_count)
-    volume_material_index = ti.field(ti.i32, shape= volume_count)
-    
-    isotropic_texture_type = ti.field(ti.i32, shape = isotropic_count)
-    isotropic_texture_index = ti.field(ti.i32, shape = isotropic_count)
-    
-    
+
     
     prim_index = -1
     sphere_index = -1

@@ -265,35 +265,37 @@ def hit_aabb(r, ray_tmin, ray_tmax, min_cords, max_cords):
     if t1 <= t0:
         hit = False
     
-    tmin = (min_cords[1] - r.origin[1]) / r.direction[1]
-    tmax = (max_cords[1] - r.origin[1]) / r.direction[1]
-    
-    temp = 0.0
-    if 1/r.direction[1] < 0:
-        temp = tmin
-        tmin = tmax
-        tmax = temp
-    
-    t0 = max(t0, tmin)
-    t1 = min(t1, tmax)
-    
-    if t1 <= t0:
-        hit = False
-    
-    tmin = (min_cords[2] - r.origin[2]) / r.direction[2]
-    tmax = (max_cords[2] - r.origin[2]) / r.direction[2]
-    
-    temp = 0.0
-    if 1/r.direction[2] < 0:
-        temp = tmin
-        tmin = tmax
-        tmax = temp
-    
-    t0 = max(t0, tmin)
-    t1 = min(t1, tmax)
-    
-    if t1 <= t0:
-        hit = False
+    if hit:
+        tmin = (min_cords[1] - r.origin[1]) / r.direction[1]
+        tmax = (max_cords[1] - r.origin[1]) / r.direction[1]
+        
+        temp = 0.0
+        if 1/r.direction[1] < 0:
+            temp = tmin
+            tmin = tmax
+            tmax = temp
+        
+        t0 = max(t0, tmin)
+        t1 = min(t1, tmax)
+        
+        if t1 <= t0:
+            hit = False
+        
+        if hit:
+            tmin = (min_cords[2] - r.origin[2]) / r.direction[2]
+            tmax = (max_cords[2] - r.origin[2]) / r.direction[2]
+            
+            temp = 0.0
+            if 1/r.direction[2] < 0:
+                temp = tmin
+                tmin = tmax
+                tmax = temp
+            
+            t0 = max(t0, tmin)
+            t1 = min(t1, tmax)
+            
+            if t1 <= t0:
+                hit = False
 
     
     return hit
@@ -326,26 +328,29 @@ def quad_hit(obj_index, r, ray_tmin, ray_tmax):
     denom = normal.dot(r.direction)
     if abs(denom) < 1e-8:
         hit = False
-    t = (D - normal.dot(r.origin)) / denom
-    if not (ray_tmin <= t <= ray_tmax):
-        hit = False
-    
-    intersection = r.origin + t * r.direction
-    p = intersection - current_Q
-    alpha = w.dot(cross(p, current_V))
-    beta = w.dot(cross(current_U, p))
-    
-    if not (0 <= alpha <= 1) or not (0 <= beta <= 1):
-        hit = False
-    
+        
     if hit:
-        t = t
-        p = intersection
-        front_face, normal = set_face_normal(r, normal)
-        u = alpha
-        v = beta
-        material_type = taichi_world.quad_material_type[obj_index]
-        material_index = taichi_world.quad_material_index[obj_index]
+        t = (D - normal.dot(r.origin)) / denom
+        if not (ray_tmin <= t <= ray_tmax):
+            hit = False
+        
+        if hit:
+            intersection = r.origin + t * r.direction
+            p = intersection - current_Q
+            alpha = w.dot(cross(p, current_V))
+            beta = w.dot(cross(current_U, p))
+            
+            if not (0 <= alpha <= 1) or not (0 <= beta <= 1):
+                hit = False
+            
+            if hit:
+                t = t
+                p = intersection
+                front_face, normal = set_face_normal(r, normal)
+                u = alpha
+                v = beta
+                material_type = taichi_world.quad_material_type[obj_index]
+                material_index = taichi_world.quad_material_index[obj_index]
     
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)
     
@@ -374,21 +379,24 @@ def sphere_hit(obj_index, r, ray_tmin, ray_tmax):
     discriminent = h*h-a*c
     if discriminent < 0:
         hit = False
+        
     
-    sqrt_d = discriminent**0.5
-    root = (h - sqrt_d) / a
-    if root <= ray_tmin or ray_tmax <= root:
-        root = (h + sqrt_d) / a
-        if root <= ray_tmin or ray_tmax <= root:
-            hit = False
     if hit:
-        t = root
-        p = r.origin + root * r.direction
-        outward_normal = (p - current_center)/current_radius
-        front_face, normal = set_face_normal(r, outward_normal)
-        u,v = get_sphere_uv(outward_normal)
-        material_type = taichi_world.sphere_material_type[obj_index]
-        material_index = taichi_world.sphere_material_index[obj_index]
+        sqrt_d = discriminent**0.5
+        root = (h - sqrt_d) / a
+        if root <= ray_tmin or ray_tmax <= root:
+            root = (h + sqrt_d) / a
+            if root <= ray_tmin or ray_tmax <= root:
+                hit = False
+                
+        if hit:
+            t = root
+            p = r.origin + root * r.direction
+            outward_normal = (p - current_center)/current_radius
+            front_face, normal = set_face_normal(r, outward_normal)
+            u,v = get_sphere_uv(outward_normal)
+            material_type = taichi_world.sphere_material_type[obj_index]
+            material_index = taichi_world.sphere_material_index[obj_index]
 
     return (hit, t, p, front_face, normal, u, v, material_type, material_index)
 
@@ -660,9 +668,10 @@ def volume_hit(obj_index, r, ray_tmin, ray_tmax):
         if not rec1_hit:
             hit = False      
         
-        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = sphere_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
-        if not rec2_hit:
-            hit = False
+        if hit:
+            rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = sphere_hit(volume_obj_index, r, rec1_t+0.001, ray_tmax)
+            if not rec2_hit:
+                hit = False
     
     elif obj_type == 1: 
     
@@ -670,9 +679,10 @@ def volume_hit(obj_index, r, ray_tmin, ray_tmax):
         if not rec1_hit:
             hit = False      
         
-        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = quad_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
-        if not rec2_hit:
-            hit = False
+        if hit:
+            rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = quad_hit(volume_obj_index, r, rec1_t+0.001, ray_tmax)
+            if not rec2_hit:
+                hit = False
     
     elif obj_type == 2: 
     
@@ -680,9 +690,10 @@ def volume_hit(obj_index, r, ray_tmin, ray_tmax):
         if not rec1_hit:
             hit = False      
         
-        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = box_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
-        if not rec2_hit:
-            hit = False
+        if hit:
+            rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = box_hit(volume_obj_index, r, rec1_t+0.001, ray_tmax)
+            if not rec2_hit:
+                hit = False
             
     elif obj_type == 3: 
     
@@ -690,9 +701,10 @@ def volume_hit(obj_index, r, ray_tmin, ray_tmax):
         if not rec1_hit:
             hit = False      
         
-        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = rotate_y_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
-        if not rec2_hit:
-            hit = False
+        if hit:
+            rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = rotate_y_hit(volume_obj_index, r, rec1_t+0.001, ray_tmax)
+            if not rec2_hit:
+                hit = False
     
     elif obj_type == 4: 
     
@@ -700,39 +712,42 @@ def volume_hit(obj_index, r, ray_tmin, ray_tmax):
         if not rec1_hit:
             hit = False      
         
-        rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = translate_hit(volume_obj_index, r, rec1_t+0.0001, ray_tmax)
-        if not rec2_hit:
-            hit = False
+        if hit:
+            rec2_hit, rec2_t, rec2_p, rec2_front_face, rec2_normal, rec2_u, rec2_v, rec2_material_type, rec2_material_index = translate_hit(volume_obj_index, r, rec1_t+0.001, ray_tmax)
+            if not rec2_hit:
+                hit = False
 
-    if (rec1_t < ray_tmin):
-            rec1_t = ray_tmin
-            
-    if (rec2_t > ray_tmax):
-        rec2_t = ray_tmax
-    
-    if (rec1_t >= rec2_t):
-        hit = False
-    
-    if (rec1_t < 0):
-        rec1_t = 0
-    
-    
-    ray_length = r.direction.norm()
-    distance_inside_boundary = (rec2_t - rec1_t) * ray_length
-    hit_distance = volume_density * ti.log(ti.random())
-    flag = True
-    flag = (hit_distance > distance_inside_boundary)
-    if flag:
-            hit = False
-    
-    
     if hit:
-        t = rec1_t + hit_distance / ray_length 
-        p = r.origin + t * r.direction
-        normal = ti.Vector([1.0,0.0,0.0])
-        front_face = True
-        material_type = taichi_world.volume_material_type[obj_index]
-        material_index = taichi_world.volume_material_index[obj_index]
+        if (rec1_t < ray_tmin):
+                rec1_t = ray_tmin
+                
+        if (rec2_t > ray_tmax):
+            rec2_t = ray_tmax
+        
+        if (rec1_t >= rec2_t):
+            hit = False
+        
+        if hit:
+            if (rec1_t < 0):
+                rec1_t = 0
+            
+            
+            ray_length = r.direction.norm()
+            distance_inside_boundary = (rec2_t - rec1_t) * ray_length
+            hit_distance = volume_density * ti.log(ti.random())
+            flag = True
+            flag = (hit_distance > distance_inside_boundary)
+            if flag:
+                    hit = False
+            
+            
+            if hit:
+                t = rec1_t + hit_distance / ray_length 
+                p = r.origin + t * r.direction
+                normal = ti.Vector([1.0,0.0,0.0])
+                front_face = True
+                material_type = taichi_world.volume_material_type[obj_index]
+                material_index = taichi_world.volume_material_index[obj_index]
 
         
     

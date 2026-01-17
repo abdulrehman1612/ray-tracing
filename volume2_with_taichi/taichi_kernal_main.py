@@ -61,7 +61,7 @@ def run_kernal(image_width: ti.i32,
     defocus_radius = focus_distance * ti.tan(defocus_angle * 0.5 * 3.14159265 / 180.0)
     defocus_disk_u = u * defocus_radius
     defocus_disk_v = v * defocus_radius
-    ray_tmin = ti.cast(0.001, ti.f32)
+    ray_tmin = ti.cast(0.01, ti.f32)
     ray_tmax = ti.cast(1e30, ti.f32)
     
     ti.loop_config(parallelize=12, block_dim=32, block_dim_adaptive=False)

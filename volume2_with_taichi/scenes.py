@@ -49,7 +49,7 @@ def week_1_final_render():
 
 
 def cornel_box_render():
-    cam = camera(1, 1080, samples_per_pixel=10000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
+    cam = camera(1, 1000, samples_per_pixel=10000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
     world = list_hittable()
     red   = lambertian(vec3(.65, .05, .05))
     white = lambertian(vec3(.73, .73, .73))
@@ -87,7 +87,7 @@ def perlin_noise_render():
     
 
 def week_2_final_render():
-    cam = camera(1, 1080, samples_per_pixel=10000, lookfrom =[478, 278, -600],lookat = [278, 278, 0],defocus_angle = 0, focus_distance  = 10, zoom = 5, max_depth=50, background_color=[0, 0, 0])
+    cam = camera(1, 1000, samples_per_pixel=10000, lookfrom =[478, 278, -600],lookat = [278, 278, 0],defocus_angle = 0, zoom = 5, max_depth=50, background_color=[0, 0, 0])
 
     world = list_hittable()
     ground = lambertian(color(0.48, 0.83, 0.53))
@@ -130,7 +130,7 @@ def week_2_final_render():
     boundary = sphere(point3(0,0,0), 5000, dielectric(1.5))
     world.add(volume(boundary, 0.0001, isotropic(color(1,1,1))))
     emat = lambertian(image_texture("earthmap.jpg"))
-    world.add(sphere(point3(400,200,400), 100, emat))\
+    world.add(sphere(point3(400,200,400), 100, emat))
     
     pertext = perlin_noise(0.2)
     world.add(sphere(point3(220,280,300), 80, lambertian(pertext)))
@@ -144,6 +144,33 @@ def week_2_final_render():
     rotated_boxes2.add(rotate_y(boxes2, 15))
     world.add(translate(rotated_boxes2, vec3(-100,270,395)))
     cam.render(world)
-
-   
-
+    
+def real_time_render():
+    cam = camera(16/9, 800, samples_per_pixel=3, lookfrom=[13,2,3] ,lookat=[0,0,0], zoom=7, background_color=[0.5, 0.7, 1.0], defocus_angle=0.6, focus_distance=10.0)
+    world = list_hittable()
+    ground_material = lambertian(color(0.5, 0.5, 0.5))
+    world.add(sphere(point3(0, -1000, 0), 1000, ground_material))
+    for a in range(-11, 11):
+        for b in range(-11, 11):
+            choose_mat = random()
+            center = point3(a + 0.9 * random(),0.2,b + 0.9 * random())
+            if (center - point3(4, 0.2, 0)).length() > 0.9:
+                if choose_mat < 0.8:
+                    albedo = color.random(0,1) * color.random(0,1)
+                    sphere_material = lambertian(albedo)
+                    world.add(sphere(center, 0.2, sphere_material))
+                elif choose_mat < 0.95:
+                    albedo = color.random(0.5, 1.0)
+                    fuzz = uniform(0.0, 0.5)
+                    sphere_material = metal(albedo, fuzz)
+                    world.add(sphere(center, 0.2, sphere_material))
+                else:
+                    sphere_material = dielectric(1.5)
+                    world.add(sphere(center, 0.2, sphere_material))
+    material1 = dielectric(1.5)
+    world.add(sphere(point3(0, 1, 0), 1.0, material1))
+    material2 = lambertian(color(0.4, 0.2, 0.1))
+    world.add(sphere(point3(-4, 1, 0), 1.0, material2))
+    material3 = metal(color(0.7, 0.6, 0.5), 0.0)
+    world.add(sphere(point3(4, 1, 0), 1.0, material3))
+    cam.render(world, realtime=True)
