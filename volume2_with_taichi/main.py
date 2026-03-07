@@ -36,3 +36,4 @@ from scenes import *
 # Use Ctrl+S while gui is running to save image in working directory
 
 #real_time_render()
+house()

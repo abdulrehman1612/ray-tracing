@@ -12,4 +12,3 @@ from Cython.Build import cythonize
 
 
 setup(name='Vec3', ext_modules=cythonize("Vec3.pyx", compiler_directives={'language_level': "3"}))
-

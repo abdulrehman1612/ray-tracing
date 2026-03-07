@@ -8,7 +8,7 @@ Created on Thu Jan  8 04:20:33 2026
 
 from camera import camera
 from list_hittable import list_hittable
-from objects import sphere, quad, box, translate, rotate_y, volume
+from objects import sphere, quad, box, translate, rotate_y, volume, mesh
 from materials import lambertian, metal, dielectric, diffuse_light, isotropic
 from Vec3 import vec3
 from textures import checker_texture, perlin_noise, image_texture
@@ -17,7 +17,7 @@ color = vec3
 point3 = vec3
 
 def week_1_final_render():
-    cam = camera(16/9, 1920, samples_per_pixel=10000, lookfrom=[13,2,3] ,lookat=[0,0,0], zoom=7, background_color=[0.5, 0.7, 1.0], defocus_angle=0.6, focus_distance=10.0)
+    cam = camera(16/9, 1920, samples_per_pixel=300, lookfrom=[13,2,3] ,lookat=[0,0,0], zoom=7, background_color=[0.5, 0.7, 1.0], defocus_angle=0.6, focus_distance=10.0)
     world = list_hittable()
     ground_material = lambertian(color(0.5, 0.5, 0.5))
     world.add(sphere(point3(0, -1000, 0), 1000, ground_material))
@@ -49,7 +49,7 @@ def week_1_final_render():
 
 
 def cornel_box_render():
-    cam = camera(1, 1000, samples_per_pixel=10000, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
+    cam = camera(1, 400, samples_per_pixel=50, zoom=5, lookfrom=[278, 278, -800], lookat=[278, 278, 0], background_color=[0,0,0])
     world = list_hittable()
     red   = lambertian(vec3(.65, .05, .05))
     white = lambertian(vec3(.73, .73, .73))
@@ -77,7 +77,7 @@ def cornel_box_render():
     
 
 def perlin_noise_render():
-    cam = camera(16/9, 1920,samples_per_pixel=10000, lookfrom=[26,3,6], lookat=[0,2,0], zoom=7, background_color=[0,0,0])
+    cam = camera(16/9, 1920,samples_per_pixel=30, lookfrom=[26,3,6], lookat=[0,2,0], zoom=7, background_color=[0,0,0])
     world = list_hittable()
     world.add(sphere(vec3(0,-1000,0), 1000, lambertian(perlin_noise(4))))
     world.add(sphere(vec3(0,2,0), 2, lambertian(perlin_noise(4))))
@@ -87,7 +87,7 @@ def perlin_noise_render():
     
 
 def week_2_final_render():
-    cam = camera(1, 1000, samples_per_pixel=10000, lookfrom =[478, 278, -600],lookat = [278, 278, 0],defocus_angle = 0, zoom = 5, max_depth=50, background_color=[0, 0, 0])
+    cam = camera(1, 1000, samples_per_pixel=250, lookfrom =[478, 278, -600],lookat = [278, 278, 0],defocus_angle = 0, zoom = 5, max_depth=50, background_color=[0, 0, 0])
 
     world = list_hittable()
     ground = lambertian(color(0.48, 0.83, 0.53))
@@ -146,7 +146,7 @@ def week_2_final_render():
     cam.render(world)
     
 def real_time_render():
-    cam = camera(16/9, 800, samples_per_pixel=3, lookfrom=[13,2,3] ,lookat=[0,0,0], zoom=7, background_color=[0.5, 0.7, 1.0], defocus_angle=0.6, focus_distance=10.0)
+    cam = camera(16/9, 800, samples_per_pixel=4, lookfrom=[13,2,3] ,lookat=[0,0,0], zoom=7, background_color=[0.5, 0.7, 1.0], defocus_angle=0.6, focus_distance=10.0)
     world = list_hittable()
     ground_material = lambertian(color(0.5, 0.5, 0.5))
     world.add(sphere(point3(0, -1000, 0), 1000, ground_material))
@@ -174,3 +174,24 @@ def real_time_render():
     material3 = metal(color(0.7, 0.6, 0.5), 0.0)
     world.add(sphere(point3(4, 1, 0), 1.0, material3))
     cam.render(world, realtime=True)
+
+def house():
+    cam = camera(1000, 1000, samples_per_pixel=1, lookfrom=[+20,10,23] ,lookat=[-8,0,0],background_color=[0,0,0])
+
+    world = list_hittable()
+
+    # Materials
+    cottage_lambertian = lambertian(image_texture("/home/AGU/Documents/cottage_diffuse.png"))
+    green = lambertian(color(0.1, 0.8, 0.1))
+    
+    
+    boundary = sphere(point3(0,0,0), 5000, dielectric(1.5))
+    world.add(volume(boundary, 0.0001, isotropic(color(1,1,1))))
+    world.add(mesh("/home/AGU/Documents/cottage_ground.obj", green))
+    world.add(mesh("/home/AGU/Documents/cottage_light1.obj", diffuse_light(color(4, 4, 4))))
+    world.add(mesh("/home/AGU/Documents/cottage_obj.obj", cottage_lambertian))
+    
+    dead_tree_material = lambertian(image_texture("/home/AGU/Documents/textures/DeadTree_LoPoly_DeadTree_Diffuse.png"))
+    tree = list_hittable()
+    world.add(mesh("/home/AGU/Documents/source/DeadTree_LoPoly.obj", dead_tree_material,0.2, [-10,0,20],180))
+    cam.render(world)

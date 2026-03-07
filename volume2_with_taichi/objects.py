@@ -9,6 +9,8 @@ from Vec3 import vec3
 from list_hittable import list_hittable
 import BVH
 import math
+import trimesh
+import numpy as np
 
 class sphere:
     def __init__(self, center1, radius, material, center2 = vec3(0,0,0)):
@@ -190,5 +192,77 @@ class volume:
         self.centroid = obj.centroid
         self.type = 5
         self.material = mat
+
+class face:
+    def __init__(self, Q, U, V, uvs):
+        self.Q = Q
+        self.U = U
+        self.V = V
+        
+        p0 = self.Q
+        p1 = self.Q + self.U
+        p2 = self.Q + self.V
+        
+        self.uvs = uvs
+        
+        min_x = min(p0.x(), p1.x(), p2.x())
+        min_y = min(p0.y(), p1.y(), p2.y())
+        min_z = min(p0.z(), p1.z(), p2.z())
+
+        max_x = max(p0.x(), p1.x(), p2.x())
+        max_y = max(p0.y(), p1.y(), p2.y())
+        max_z = max(p0.z(), p1.z(), p2.z())
+        
+        self.min = vec3(min_x, min_y, min_z)
+        self.max = vec3(max_x, max_y, max_z)
+        self.centroid = (self.max+self.min) * 0.5
+        
+class mesh:
+    def __init__(self, file_path, mat, scale=1, translate=[0,0,0], rotate_y = 0):
+        self.objects = list_hittable()
+        self.material = mat
+        object_data = trimesh.load_mesh(file_path)
+        
+        rotate = math.radians(rotate_y)
+        S = trimesh.transformations.scale_matrix(scale)
+        R = trimesh.transformations.rotation_matrix(rotate, [0,1,0])
+        T = trimesh.transformations.translation_matrix(translate)
+        object_data.apply_transform(T @ R @ S)
+        
+        
+        for tri in object_data.faces:
+            v0, v1, v2 = object_data.vertices[tri[0]], object_data.vertices[tri[1]], object_data.vertices[tri[2]]
+            
+            if hasattr(object_data.visual, "uv"):
+                if object_data.visual.uv is not None:
+                    uv0, uv1, uv2 = object_data.visual.uv[tri[0]], object_data.visual.uv[tri[1]],object_data.visual.uv[tri[2]]
+                else:
+                    uv0, uv1, uv2 = [-1,-1], [-1,-1], [-1,-1]
+            else:
+                uv0, uv1, uv2 = [-1,-1], [-1,-1], [-1,-1]
+            
+            self.objects.add(face(vec3(*v0), vec3(*v1)-vec3(*v0), vec3(*v2) - vec3(*v0), [np.array(uv0), np.array(uv1), np.array(uv2)]))
+        
+        self.objects = self.objects.objects
+        for i, obj in enumerate(self.objects):
+            obj.prim_id = i
+        
+        self.bvh = BVH.make_BVH(self.objects)
+        BVH.bvh_nodes = []
+        BVH.bvh_primitive_indices = []
+        BVH.flatten_bvh(self.bvh)
+        self.bvh_nodes = BVH.bvh_nodes
+        self.bvh_primitive_indices = BVH.bvh_primitive_indices
+        
+        self.min = vec3(*object_data.bounds[0])
+        self.max = vec3(*object_data.bounds[1])
+        self.centroid = (self.max+self.min) * 0.5
+        self.type = 6
+        
+        
+        
+        
+        
+        
         
         

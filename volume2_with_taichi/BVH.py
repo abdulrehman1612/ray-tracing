@@ -50,22 +50,30 @@ def enclose(objects):
     return min_, max_
 
 
-
+def get_biggest_axis(objects):
+    min_cords, max_cords = enclose(objects)
+    extents = [max_cords[0] - min_cords[0],
+               max_cords[1] - min_cords[1],
+               max_cords[2] - min_cords[2]]
+        
+    return extents.index(max(extents))
+    
+    
         
     
-def make_BVH(list_objects, axis = 0):
+def make_BVH(list_objects):
     
     if len(list_objects) <= 1:
         min_cords , max_cords = enclose(list_objects)
         return BVHNode(min_cords,max_cords, objects = list_objects)    
 
-    axis = axis % 3
+    axis = get_biggest_axis(list_objects)
     objects = sorted(list_objects, key=lambda obj: obj.centroid[axis])
     mid = len(objects) // 2
     left_objs = objects[:mid]
     right_objs = objects[mid:]
-    left_node = make_BVH(left_objs, axis + 1)
-    right_node = make_BVH(right_objs, axis + 1)
+    left_node = make_BVH(left_objs)
+    right_node = make_BVH(right_objs)
     
     min_cords, max_cords = enclose([left_node, right_node])
 

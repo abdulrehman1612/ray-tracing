@@ -7,14 +7,21 @@ Created on Thu Jan  8 05:17:28 2026
 """
 
 import taichi as ti
-from objects import sphere, quad, box, rotate_y, translate, volume
+from objects import sphere, quad, box, rotate_y, translate, volume, mesh
 from materials import lambertian, metal,dielectric, diffuse_light, isotropic
 from textures import solid_color, checker_texture, perlin_noise, image_texture
 from random import uniform, randint
 from BVH import make_BVH, flatten_bvh
+from multiprocessing import Pool
 
-
-
+@ti.kernel
+def set_image_data(image_height: ti.i32,
+                   image_width: ti.i32,
+                   image_width_start: ti.i32,
+                   image_array: ti.types.ndarray(dtype=ti.f32, ndim=3)):
+    
+    for y,x in ti.ndrange(image_height, image_width):
+            image_texture_data[y, image_width_start + x] = ti.Vector([image_array[y, x,0],image_array[y, x,1],image_array[y, x,2]])
 
 def init_world(world):
     
@@ -72,6 +79,9 @@ def init_world(world):
     translate_bvh_count = 0
     volume_count = 0
     isotropic_count = 0
+    mesh_count = 0
+    mesh_prim_count = 0
+    mesh_bvh_count = 0
     
     
     for obj in world.objects:
@@ -155,6 +165,54 @@ def init_world(world):
             elif isinstance(obj.material, diffuse_light):
                 diffuse_light_count += 1
                 solid_color_count += 1
+        
+        elif isinstance(obj, mesh):
+            Prims_count += 1
+            mesh_count += 1
+            mesh_prim_count += len(obj.bvh_primitive_indices)
+            mesh_bvh_count += len(obj.bvh_nodes)
+            
+            if isinstance(obj.material, lambertian):
+                lambertian_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+                elif isinstance(obj.material.texture, perlin_noise):
+                    perlin_texture_count += 1
+                    
+                elif isinstance(obj.material.texture, image_texture):
+                    image_texture_count += 1
+                    image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                    image_texture_total_width += obj.material.texture.image.width
+                    
+                    
+            elif isinstance(obj.material, metal):
+                metal_count += 1
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_count += 1
+                    
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_texture_count += 1
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_count += 1
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_count += 1
+            elif isinstance(obj.material, dielectric):
+                dielctric_count += 1
+            elif isinstance(obj.material, diffuse_light):
+                diffuse_light_count += 1
+                solid_color_count += 1
+            
+        
+        
+        
+        
         elif isinstance(obj, box):
             Prims_count += 1
             box_count += 1
@@ -286,6 +344,49 @@ def init_world(world):
                         diffuse_light_count += 1
                         solid_color_count += 1
                     
+                elif isinstance(obj, mesh):
+                    Prims_count += 1
+                    mesh_count += 1
+                    mesh_prim_count += len(obj.bvh_primitive_indices)
+                    mesh_bvh_count += len(obj.bvh_nodes)
+                    
+                    if isinstance(obj.material, lambertian):
+                        lambertian_count += 1
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                        elif isinstance(obj.material.texture, perlin_noise):
+                            perlin_texture_count += 1
+                            
+                        elif isinstance(obj.material.texture, image_texture):
+                            image_texture_count += 1
+                            image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                            image_texture_total_width += obj.material.texture.image.width
+                            
+                            
+                    elif isinstance(obj.material, metal):
+                        metal_count += 1
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                    elif isinstance(obj.material, dielectric):
+                        dielctric_count += 1
+                    elif isinstance(obj.material, diffuse_light):
+                        diffuse_light_count += 1
+                        solid_color_count += 1
+                
                 elif isinstance(obj, box):
                     Prims_count += 1
                     box_count += 1
@@ -418,6 +519,50 @@ def init_world(world):
                         diffuse_light_count += 1
                         solid_color_count += 1
                     
+                elif isinstance(obj, mesh):
+                    Prims_count += 1
+                    mesh_count += 1
+                    mesh_prim_count += len(obj.bvh_primitive_indices)
+                    mesh_bvh_count += len(obj.bvh_nodes)
+                    
+                    if isinstance(obj.material, lambertian):
+                        lambertian_count += 1
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                        elif isinstance(obj.material.texture, perlin_noise):
+                            perlin_texture_count += 1
+                            
+                        elif isinstance(obj.material.texture, image_texture):
+                            image_texture_count += 1
+                            image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                            image_texture_total_width += obj.material.texture.image.width
+                            
+                            
+                    elif isinstance(obj.material, metal):
+                        metal_count += 1
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_count += 1
+                            
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_texture_count += 1
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_count += 1
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_count += 1
+                    elif isinstance(obj.material, dielectric):
+                        dielctric_count += 1
+                    elif isinstance(obj.material, diffuse_light):
+                        diffuse_light_count += 1
+                        solid_color_count += 1
+                
+                
                 elif isinstance(obj, box):
                     Prims_count += 1
                     box_count += 1
@@ -549,6 +694,50 @@ def init_world(world):
                                 diffuse_light_count += 1
                                 solid_color_count += 1
                             
+                        elif isinstance(obj, mesh):
+                            Prims_count += 1
+                            mesh_count += 1
+                            mesh_prim_count += len(obj.bvh_primitive_indices)
+                            mesh_bvh_count += len(obj.bvh_nodes)
+                
+                            
+                            if isinstance(obj.material, lambertian):
+                                lambertian_count += 1
+                                if isinstance(obj.material.texture, solid_color):
+                                    solid_color_count += 1
+                                    
+                                elif isinstance(obj.material.texture, checker_texture):
+                                    checker_texture_count += 1
+                                    if isinstance(obj.material.texture.even, solid_color):
+                                        solid_color_count += 1
+                                    if isinstance(obj.material.texture.odd, solid_color):
+                                        solid_color_count += 1
+                                elif isinstance(obj.material.texture, perlin_noise):
+                                    perlin_texture_count += 1
+                                    
+                                elif isinstance(obj.material.texture, image_texture):
+                                    image_texture_count += 1
+                                    image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                                    image_texture_total_width += obj.material.texture.image.width
+                                    
+                                    
+                            elif isinstance(obj.material, metal):
+                                metal_count += 1
+                                if isinstance(obj.material.texture, solid_color):
+                                    solid_color_count += 1
+                                    
+                                elif isinstance(obj.material.texture, checker_texture):
+                                    checker_texture_count += 1
+                                    if isinstance(obj.material.texture.even, solid_color):
+                                        solid_color_count += 1
+                                    if isinstance(obj.material.texture.odd, solid_color):
+                                        solid_color_count += 1
+                            elif isinstance(obj.material, dielectric):
+                                dielctric_count += 1
+                            elif isinstance(obj.material, diffuse_light):
+                                diffuse_light_count += 1
+                                solid_color_count += 1
+                        
                         elif isinstance(obj, box):
                             Prims_count += 1
                             box_count += 1
@@ -682,6 +871,49 @@ def init_world(world):
                     diffuse_light_count += 1
                     solid_color_count += 1
                 
+            elif isinstance(obj, mesh):
+                Prims_count += 1
+                mesh_count += 1
+                mesh_prim_count += len(obj.bvh_primitive_indices)
+                mesh_bvh_count += len(obj.bvh_nodes)
+                
+                if isinstance(obj.material, lambertian):
+                    lambertian_count += 1
+                    if isinstance(obj.material.texture, solid_color):
+                        solid_color_count += 1
+                        
+                    elif isinstance(obj.material.texture, checker_texture):
+                        checker_texture_count += 1
+                        if isinstance(obj.material.texture.even, solid_color):
+                            solid_color_count += 1
+                        if isinstance(obj.material.texture.odd, solid_color):
+                            solid_color_count += 1
+                    elif isinstance(obj.material.texture, perlin_noise):
+                        perlin_texture_count += 1
+                        
+                    elif isinstance(obj.material.texture, image_texture):
+                        image_texture_count += 1
+                        image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                        image_texture_total_width += obj.material.texture.image.width
+                        
+                        
+                elif isinstance(obj.material, metal):
+                    metal_count += 1
+                    if isinstance(obj.material.texture, solid_color):
+                        solid_color_count += 1
+                        
+                    elif isinstance(obj.material.texture, checker_texture):
+                        checker_texture_count += 1
+                        if isinstance(obj.material.texture.even, solid_color):
+                            solid_color_count += 1
+                        if isinstance(obj.material.texture.odd, solid_color):
+                            solid_color_count += 1
+                elif isinstance(obj.material, dielectric):
+                    dielctric_count += 1
+                elif isinstance(obj.material, diffuse_light):
+                    diffuse_light_count += 1
+                    solid_color_count += 1
+            
             elif isinstance(obj, box):
                 Prims_count += 1
                 box_count += 1
@@ -813,6 +1045,50 @@ def init_world(world):
                             diffuse_light_count += 1
                             solid_color_count += 1
                         
+                    elif isinstance(obj, mesh):
+                        Prims_count += 1
+                        mesh_count += 1
+                        mesh_prim_count += len(obj.bvh_primitive_indices)
+                        mesh_bvh_count += len(obj.bvh_nodes)
+                        
+                        if isinstance(obj.material, lambertian):
+                            lambertian_count += 1
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_count += 1
+                                
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_texture_count += 1
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_count += 1
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_count += 1
+                            elif isinstance(obj.material.texture, perlin_noise):
+                                perlin_texture_count += 1
+                                
+                            elif isinstance(obj.material.texture, image_texture):
+                                image_texture_count += 1
+                                image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                                image_texture_total_width += obj.material.texture.image.width
+                                
+                                
+                        elif isinstance(obj.material, metal):
+                            metal_count += 1
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_count += 1
+                                
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_texture_count += 1
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_count += 1
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_count += 1
+                        elif isinstance(obj.material, dielectric):
+                            dielctric_count += 1
+                        elif isinstance(obj.material, diffuse_light):
+                            diffuse_light_count += 1
+                            solid_color_count += 1
+                    
+                    
                     elif isinstance(obj, box):
                         Prims_count += 1
                         box_count += 1
@@ -945,6 +1221,50 @@ def init_world(world):
                             diffuse_light_count += 1
                             solid_color_count += 1
                         
+                    elif isinstance(obj, mesh):
+                        Prims_count += 1
+                        mesh_count += 1
+                        mesh_prim_count += len(obj.bvh_primitive_indices)
+                        mesh_bvh_count += len(obj.bvh_nodes)
+                        
+                        if isinstance(obj.material, lambertian):
+                            lambertian_count += 1
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_count += 1
+                                
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_texture_count += 1
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_count += 1
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_count += 1
+                            elif isinstance(obj.material.texture, perlin_noise):
+                                perlin_texture_count += 1
+                                
+                            elif isinstance(obj.material.texture, image_texture):
+                                image_texture_count += 1
+                                image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                                image_texture_total_width += obj.material.texture.image.width
+                                
+                                
+                        elif isinstance(obj.material, metal):
+                            metal_count += 1
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_count += 1
+                                
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_texture_count += 1
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_count += 1
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_count += 1
+                        elif isinstance(obj.material, dielectric):
+                            dielctric_count += 1
+                        elif isinstance(obj.material, diffuse_light):
+                            diffuse_light_count += 1
+                            solid_color_count += 1
+                    
+                    
                     elif isinstance(obj, box):
                         Prims_count += 1
                         box_count += 1
@@ -1076,6 +1396,50 @@ def init_world(world):
                                     diffuse_light_count += 1
                                     solid_color_count += 1
                                 
+                            elif isinstance(obj, mesh):
+                                Prims_count += 1
+                                mesh_count += 1
+                                mesh_prim_count += len(obj.bvh_primitive_indices)
+                                mesh_bvh_count += len(obj.bvh_nodes)
+                                
+                                if isinstance(obj.material, lambertian):
+                                    lambertian_count += 1
+                                    if isinstance(obj.material.texture, solid_color):
+                                        solid_color_count += 1
+                                        
+                                    elif isinstance(obj.material.texture, checker_texture):
+                                        checker_texture_count += 1
+                                        if isinstance(obj.material.texture.even, solid_color):
+                                            solid_color_count += 1
+                                        if isinstance(obj.material.texture.odd, solid_color):
+                                            solid_color_count += 1
+                                    elif isinstance(obj.material.texture, perlin_noise):
+                                        perlin_texture_count += 1
+                                        
+                                    elif isinstance(obj.material.texture, image_texture):
+                                        image_texture_count += 1
+                                        image_texture_max_height = max(obj.material.texture.image.height, image_texture_max_height)
+                                        image_texture_total_width += obj.material.texture.image.width
+                                        
+                                        
+                                elif isinstance(obj.material, metal):
+                                    metal_count += 1
+                                    if isinstance(obj.material.texture, solid_color):
+                                        solid_color_count += 1
+                                        
+                                    elif isinstance(obj.material.texture, checker_texture):
+                                        checker_texture_count += 1
+                                        if isinstance(obj.material.texture.even, solid_color):
+                                            solid_color_count += 1
+                                        if isinstance(obj.material.texture.odd, solid_color):
+                                            solid_color_count += 1
+                                elif isinstance(obj.material, dielectric):
+                                    dielctric_count += 1
+                                elif isinstance(obj.material, diffuse_light):
+                                    diffuse_light_count += 1
+                                    solid_color_count += 1
+                            
+                            
                             elif isinstance(obj, box):
                                 Prims_count += 1
                                 box_count += 1
@@ -1145,6 +1509,9 @@ def init_world(world):
     translate_prim_count = max(1, translate_prim_count)
     volume_count = max(1, volume_count)
     isotropic_count = max(1, isotropic_count)
+    mesh_count = max(1, mesh_count)
+    mesh_prim_count = max(1, mesh_prim_count)
+    mesh_bvh_count = max(1, mesh_bvh_count)
     
     
     if Prims_count > 0:
@@ -1212,6 +1579,44 @@ def init_world(world):
         quad_material_type = ti.field(ti.i32, shape= Quad_count)
         quad_material_index = ti.field(ti.i32, shape= Quad_count)
     
+    if mesh_count > 0:
+        
+        global mesh_Q
+        global mesh_U
+        global mesh_V
+        global mesh_uv0
+        global mesh_uv1
+        global mesh_uv2
+        global mesh_parent_node
+        global mesh_prim_indices
+        global mesh_material_type
+        global mesh_material_index
+        global mesh_bvh_node_min
+        global mesh_bvh_node_max
+        global mesh_bvh_node_left
+        global mesh_bvh_node_right
+        global mesh_bvh_node_prim_start
+        global mesh_bvh_node_prim_count
+        
+        mesh_parent_node = ti.field(ti.i32, shape = mesh_count)
+        mesh_Q = ti.Vector.field(3, ti.f32, shape = mesh_prim_count)
+        mesh_U = ti.Vector.field(3, ti.f32, shape = mesh_prim_count)
+        mesh_V = ti.Vector.field(3, ti.f32, shape = mesh_prim_count)
+        mesh_uv0 = ti.Vector.field(2, ti.f32, shape = mesh_prim_count)
+        mesh_uv1 = ti.Vector.field(2, ti.f32, shape = mesh_prim_count)
+        mesh_uv2 = ti.Vector.field(2, ti.f32, shape = mesh_prim_count)
+        mesh_prim_indices = ti.field(ti.i32, shape = mesh_prim_count)
+        mesh_material_type = ti.field(ti.i32, shape = mesh_prim_count)
+        mesh_material_index = ti.field(ti.i32, shape = mesh_prim_count)
+        mesh_bvh_node_min = ti.Vector.field(3, ti.f32, shape = mesh_bvh_count)
+        mesh_bvh_node_max = ti.Vector.field(3, ti.f32, shape = mesh_bvh_count)
+        mesh_bvh_node_left = ti.field(ti.i32, shape = mesh_bvh_count)
+        mesh_bvh_node_right = ti.field(ti.i32, shape = mesh_bvh_count)
+        mesh_bvh_node_prim_start = ti.field(ti.i32, shape = mesh_bvh_count)
+        mesh_bvh_node_prim_count = ti.field(ti.i32, shape = mesh_bvh_count)
+        
+        
+        
     if box_count > 0:
         global box_prim_indices_start
         box_prim_indices_start = ti.field(ti.i32, shape=box_count)
@@ -1230,7 +1635,7 @@ def init_world(world):
         global rotate_y_bvh_node_prim_count
         
         rotate_y_parent_node = ti.field(ti.i32, shape = rotate_y_count)
-        rotate_y_angle = ti.field(ti.f32, shape = translate_count)
+        rotate_y_angle = ti.field(ti.f32, shape = rotate_y_count)
         rotate_y_prim_indices = ti.field(ti.i32, shape = rotate_y_prim_count)
         rotate_y_prim_geo = ti.field(ti.i32, shape = rotate_y_prim_count)
         rotate_y_prim_type = ti.field(ti.i32, shape = rotate_y_prim_count)
@@ -1372,8 +1777,8 @@ def init_world(world):
             image_texture_width_start = ti.field(ti.i32, image_texture_count)
         
     
-    global flag
-    flag = ti.field(ti.i32, shape = 1)
+    #global flag
+    #flag = ti.field(ti.i32, shape = 1)
     
 
     
@@ -1400,6 +1805,11 @@ def init_world(world):
     translate_prim_offset = 0
     volume_index = -1
     isotropic_index = -1
+    mesh_index = -1
+    mesh_bvh_offset = 0
+    mesh_prim_index = -1
+    mesh_prim_offset = 0
+    
     
     for obj in world.objects:
         
@@ -1456,9 +1866,8 @@ def init_world(world):
                     image_texture_width[image_texture_index] = obj.material.texture.image.width
                     image_texture_width_start[image_texture_index] = image_width_start
                     
-                    for y in range(obj.material.texture.image.height):
-                        for x in range(obj.material.texture.image.width):
-                            image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                     
                     image_width_start += obj.material.texture.image.width
                 
@@ -1543,9 +1952,8 @@ def init_world(world):
                     image_texture_width[image_texture_index] = obj.material.texture.image.width
                     image_texture_width_start[image_texture_index] = image_width_start
                     
-                    for y in range(obj.material.texture.image.height):
-                        for x in range(obj.material.texture.image.width):
-                            image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                     
                     image_width_start += obj.material.texture.image.width                   
                     
@@ -1577,6 +1985,119 @@ def init_world(world):
                     solid_color_vec_index +=1
                     diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                     solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+        
+        
+        elif isinstance(obj, mesh):
+            
+            mesh_index += 1
+            prim_type[prim_index] = 6
+            prim_geo[prim_index] = mesh_index
+            
+            mesh_parent_node[mesh_index] = mesh_bvh_offset
+            
+            for i in range(len(obj.bvh_nodes)):
+                mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                
+            mesh_bvh_offset += len(obj.bvh_nodes)
+            
+            for i in range(len(obj.bvh_primitive_indices)):
+                mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+            
+            mesh_prim_offset += len(obj.bvh_primitive_indices)
+            
+            for face in obj.objects:
+                mesh_prim_index += 1
+                mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+            
+            if isinstance(obj.material, lambertian):
+                lambertian_index += 1
+                mesh_material_type[mesh_index] = 0
+                mesh_material_index[mesh_index] = lambertian_index
+                
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_vec_index += 1
+                    lambertian_texture_type[lambertian_index] = 0
+                    lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
+                elif isinstance(obj.material.texture, checker_texture):
+                    checker_index += 1
+                    lambertian_texture_type[lambertian_index] = 1
+                    lambertian_texture_index[lambertian_index] = checker_index
+                    
+                    if isinstance(obj.material.texture.even, solid_color):
+                        solid_color_vec_index += 1
+                        checker_texture_even_type[checker_index] = 0
+                        checker_texture_even_index[checker_index] = solid_color_vec_index
+                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                    
+                    if isinstance(obj.material.texture.odd, solid_color):
+                        solid_color_vec_index += 1
+                        checker_texture_odd_type[checker_index] = 0
+                        checker_texture_odd_index[checker_index] = solid_color_vec_index
+                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                    
+                    checker_texture_scale[checker_index] = obj.material.texture.scale
+                
+                elif isinstance(obj.material.texture, perlin_noise):
+                    perlin_index += 1
+                    lambertian_texture_type[lambertian_index] = 2
+                    lambertian_texture_index[lambertian_index] = perlin_index
+                    perlin_scale[perlin_index] = obj.material.texture.scale
+                    
+                elif isinstance(obj.material.texture, image_texture):
+                    image_texture_index += 1
+                    lambertian_texture_type[lambertian_index] = 3
+                    lambertian_texture_index[lambertian_index] = image_texture_index
+                    image_texture_height[image_texture_index] = obj.material.texture.image.height
+                    image_texture_width[image_texture_index] = obj.material.texture.image.width
+                    image_texture_width_start[image_texture_index] = image_width_start
+                    
+                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+                    
+                    image_width_start += obj.material.texture.image.width
+                    
+            elif isinstance(obj.material, metal):
+                metal_index += 1
+                mesh_material_type[mesh_index] = 1
+                mesh_material_index[mesh_index] = metal_index
+                
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_vec_index += 1
+                    metal_texture_type[metal_index] = 0
+                    metal_texture_index[metal_index] = solid_color_vec_index
+                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
+                metal_fuzz[metal_index] = obj.material.fuzz
+            
+            elif isinstance(obj.material, dielectric):
+                dielectric_index += 1
+                mesh_material_type[mesh_index] = 2
+                mesh_material_index[mesh_index] = dielectric_index
+                dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+            
+            elif isinstance(obj.material, diffuse_light):
+                diffuse_light_index += 1
+                mesh_material_type[mesh_index] = 3
+                mesh_material_index[mesh_index] = diffuse_light_index
+                
+                if isinstance(obj.material.texture, solid_color):
+                    solid_color_vec_index +=1
+                    diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+            
+                
+                
         
         elif isinstance(obj, box):
             box_index += 1
@@ -1635,9 +2156,8 @@ def init_world(world):
                             image_texture_width[image_texture_index] = side.material.texture.image.width
                             image_texture_width_start[image_texture_index] = image_width_start
                             
-                            for y in range(side.material.texture.image.height):
-                                for x in range(side.material.texture.image.width):
-                                    image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
+                            set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                             
                             image_width_start += side.material.texture.image.width   
                     
@@ -1748,9 +2268,8 @@ def init_world(world):
                             image_texture_width[image_texture_index] = obj.material.texture.image.width
                             image_texture_width_start[image_texture_index] = image_width_start
                             
-                            for y in range(obj.material.texture.image.height):
-                                for x in range(obj.material.texture.image.width):
-                                    image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                             
                             image_width_start += obj.material.texture.image.width
                         
@@ -1835,9 +2354,8 @@ def init_world(world):
                             image_texture_width[image_texture_index] = obj.material.texture.image.width
                             image_texture_width_start[image_texture_index] = image_width_start
                             
-                            for y in range(obj.material.texture.image.height):
-                                for x in range(obj.material.texture.image.width):
-                                    image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                             
                             image_width_start += obj.material.texture.image.width                   
                             
@@ -1869,6 +2387,119 @@ def init_world(world):
                             solid_color_vec_index +=1
                             diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                             solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
+                
+                elif isinstance(obj, mesh):
+                    
+                    mesh_index += 1
+                    prim_type[prim_index] = 6
+                    prim_geo[prim_index] = mesh_index
+                    
+                    mesh_parent_node[mesh_index] = mesh_bvh_offset
+                    
+                    for i in range(len(obj.bvh_nodes)):
+                        mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                        mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                        mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                        mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                        mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                        mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                        
+                    mesh_bvh_offset += len(obj.bvh_nodes)
+                    
+                    for i in range(len(obj.bvh_primitive_indices)):
+                        mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                    
+                    mesh_prim_offset += len(obj.bvh_primitive_indices)
+                    
+                    for face in obj.objects:
+                        mesh_prim_index += 1
+                        mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                        mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                        mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                        mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                        mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                        mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                    
+                    if isinstance(obj.material, lambertian):
+                        lambertian_index += 1
+                        mesh_material_type[mesh_index] = 0
+                        mesh_material_index[mesh_index] = lambertian_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index += 1
+                            lambertian_texture_type[lambertian_index] = 0
+                            lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_index += 1
+                            lambertian_texture_type[lambertian_index] = 1
+                            lambertian_texture_index[lambertian_index] = checker_index
+                            
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_even_type[checker_index] = 0
+                                checker_texture_even_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                            
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_odd_type[checker_index] = 0
+                                checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                            
+                            checker_texture_scale[checker_index] = obj.material.texture.scale
+                        
+                        elif isinstance(obj.material.texture, perlin_noise):
+                            perlin_index += 1
+                            lambertian_texture_type[lambertian_index] = 2
+                            lambertian_texture_index[lambertian_index] = perlin_index
+                            perlin_scale[perlin_index] = obj.material.texture.scale
+                            
+                        elif isinstance(obj.material.texture, image_texture):
+                            image_texture_index += 1
+                            lambertian_texture_type[lambertian_index] = 3
+                            lambertian_texture_index[lambertian_index] = image_texture_index
+                            image_texture_height[image_texture_index] = obj.material.texture.image.height
+                            image_texture_width[image_texture_index] = obj.material.texture.image.width
+                            image_texture_width_start[image_texture_index] = image_width_start
+                            
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                            
+                            image_width_start += obj.material.texture.image.width                   
+                            
+                    elif isinstance(obj.material, metal):
+                        metal_index += 1
+                        mesh_material_type[mesh_index] = 1
+                        mesh_material_index[mesh_index] = metal_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index += 1
+                            metal_texture_type[metal_index] = 0
+                            metal_texture_index[metal_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
+                        metal_fuzz[metal_index] = obj.material.fuzz
+                    
+                    elif isinstance(obj.material, dielectric):
+                        dielectric_index += 1
+                        mesh_material_type[mesh_index] = 2
+                        mesh_material_index[mesh_index] = dielectric_index
+                        dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                    
+                    elif isinstance(obj.material, diffuse_light):
+                        diffuse_light_index += 1
+                        mesh_material_type[mesh_index] = 3
+                        mesh_material_index[mesh_index] = diffuse_light_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index +=1
+                            diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
+                
                 
                 elif isinstance(obj, box):
                     box_index += 1
@@ -1927,10 +2558,8 @@ def init_world(world):
                                     image_texture_width[image_texture_index] = side.material.texture.image.width
                                     image_texture_width_start[image_texture_index] = image_width_start
                                     
-                                    for y in range(side.material.texture.image.height):
-                                        for x in range(side.material.texture.image.width):
-                                            image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                    
+                                    set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                     image_width_start += side.material.texture.image.width
                                     
                             elif isinstance(side.material, metal):
@@ -2041,10 +2670,8 @@ def init_world(world):
                             image_texture_width[image_texture_index] = obj.material.texture.image.width
                             image_texture_width_start[image_texture_index] = image_width_start
                             
-                            for y in range(obj.material.texture.image.height):
-                                for x in range(obj.material.texture.image.width):
-                                    image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                            
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                             image_width_start += obj.material.texture.image.width
                         
                     elif isinstance(obj.material, metal):
@@ -2128,10 +2755,8 @@ def init_world(world):
                             image_texture_width[image_texture_index] = obj.material.texture.image.width
                             image_texture_width_start[image_texture_index] = image_width_start
                             
-                            for y in range(obj.material.texture.image.height):
-                                for x in range(obj.material.texture.image.width):
-                                    image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                            
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                             image_width_start += obj.material.texture.image.width                   
                             
                     elif isinstance(obj.material, metal):
@@ -2162,6 +2787,116 @@ def init_world(world):
                             solid_color_vec_index +=1
                             diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                             solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
+                elif isinstance(obj, mesh):
+                    
+                    mesh_index += 1
+                    prim_type[prim_index] = 6
+                    prim_geo[prim_index] = mesh_index
+                    
+                    mesh_parent_node[mesh_index] = mesh_bvh_offset
+                    
+                    for i in range(len(obj.bvh_nodes)):
+                        mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                        mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                        mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                        mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                        mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                        mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                        
+                    mesh_bvh_offset += len(obj.bvh_nodes)
+                    
+                    for i in range(len(obj.bvh_primitive_indices)):
+                        mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                    
+                    mesh_prim_offset += len(obj.bvh_primitive_indices)
+                    
+                    for face in obj.objects:
+                        mesh_prim_index += 1
+                        mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                        mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                        mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                        mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                        mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                        mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                    
+                    if isinstance(obj.material, lambertian):
+                        lambertian_index += 1
+                        mesh_material_type[mesh_index] = 0
+                        mesh_material_index[mesh_index] = lambertian_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index += 1
+                            lambertian_texture_type[lambertian_index] = 0
+                            lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
+                        elif isinstance(obj.material.texture, checker_texture):
+                            checker_index += 1
+                            lambertian_texture_type[lambertian_index] = 1
+                            lambertian_texture_index[lambertian_index] = checker_index
+                            
+                            if isinstance(obj.material.texture.even, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_even_type[checker_index] = 0
+                                checker_texture_even_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                            
+                            if isinstance(obj.material.texture.odd, solid_color):
+                                solid_color_vec_index += 1
+                                checker_texture_odd_type[checker_index] = 0
+                                checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                            
+                            checker_texture_scale[checker_index] = obj.material.texture.scale
+                        
+                        elif isinstance(obj.material.texture, perlin_noise):
+                            perlin_index += 1
+                            lambertian_texture_type[lambertian_index] = 2
+                            lambertian_texture_index[lambertian_index] = perlin_index
+                            perlin_scale[perlin_index] = obj.material.texture.scale
+                            
+                        elif isinstance(obj.material.texture, image_texture):
+                            image_texture_index += 1
+                            lambertian_texture_type[lambertian_index] = 3
+                            lambertian_texture_index[lambertian_index] = image_texture_index
+                            image_texture_height[image_texture_index] = obj.material.texture.image.height
+                            image_texture_width[image_texture_index] = obj.material.texture.image.width
+                            image_texture_width_start[image_texture_index] = image_width_start
+                            
+                            set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                            image_width_start += obj.material.texture.image.width                   
+                            
+                    elif isinstance(obj.material, metal):
+                        metal_index += 1
+                        mesh_material_type[mesh_index] = 1
+                        mesh_material_index[mesh_index] = metal_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index += 1
+                            metal_texture_type[metal_index] = 0
+                            metal_texture_index[metal_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
+                        metal_fuzz[metal_index] = obj.material.fuzz
+                    
+                    elif isinstance(obj.material, dielectric):
+                        dielectric_index += 1
+                        mesh_material_type[mesh_index] = 2
+                        mesh_material_index[mesh_index] = dielectric_index
+                        dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                    
+                    elif isinstance(obj.material, diffuse_light):
+                        diffuse_light_index += 1
+                        mesh_material_type[mesh_index] = 3
+                        mesh_material_index[mesh_index] = diffuse_light_index
+                        
+                        if isinstance(obj.material.texture, solid_color):
+                            solid_color_vec_index +=1
+                            diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                
                 
                 elif isinstance(obj, box):
                     box_index += 1
@@ -2220,10 +2955,8 @@ def init_world(world):
                                     image_texture_width[image_texture_index] = side.material.texture.image.width
                                     image_texture_width_start[image_texture_index] = image_width_start
                                     
-                                    for y in range(side.material.texture.image.height):
-                                        for x in range(side.material.texture.image.width):
-                                            image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                    
+                                    set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                     image_width_start += side.material.texture.image.width   
                             
                             elif isinstance(side.material, metal):
@@ -2333,10 +3066,8 @@ def init_world(world):
                                     image_texture_width[image_texture_index] = obj.material.texture.image.width
                                     image_texture_width_start[image_texture_index] = image_width_start
                                     
-                                    for y in range(obj.material.texture.image.height):
-                                        for x in range(obj.material.texture.image.width):
-                                            image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                    
+                                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                     image_width_start += obj.material.texture.image.width
                                 
                             elif isinstance(obj.material, metal):
@@ -2420,10 +3151,8 @@ def init_world(world):
                                     image_texture_width[image_texture_index] = obj.material.texture.image.width
                                     image_texture_width_start[image_texture_index] = image_width_start
                                     
-                                    for y in range(obj.material.texture.image.height):
-                                        for x in range(obj.material.texture.image.width):
-                                            image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                    
+                                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                     image_width_start += obj.material.texture.image.width                   
                                     
                             elif isinstance(obj.material, metal):
@@ -2454,6 +3183,117 @@ def init_world(world):
                                     solid_color_vec_index +=1
                                     diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                                     solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
+                        
+                        elif isinstance(obj, mesh):
+                            
+                            mesh_index += 1
+                            prim_type[prim_index] = 6
+                            prim_geo[prim_index] = mesh_index
+                            
+                            mesh_parent_node[mesh_index] = mesh_bvh_offset
+                            
+                            for i in range(len(obj.bvh_nodes)):
+                                mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                                mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                                mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                                mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                                mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                                mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                                
+                            mesh_bvh_offset += len(obj.bvh_nodes)
+                            
+                            for i in range(len(obj.bvh_primitive_indices)):
+                                mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                            
+                            mesh_prim_offset += len(obj.bvh_primitive_indices)
+                            
+                            for face in obj.objects:
+                                mesh_prim_index += 1
+                                mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                                mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                                mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                                mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                                mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                                mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                            
+                            if isinstance(obj.material, lambertian):
+                                lambertian_index += 1
+                                mesh_material_type[mesh_index] = 0
+                                mesh_material_index[mesh_index] = lambertian_index
+                                
+                                if isinstance(obj.material.texture, solid_color):
+                                    solid_color_vec_index += 1
+                                    lambertian_texture_type[lambertian_index] = 0
+                                    lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                                
+                                elif isinstance(obj.material.texture, checker_texture):
+                                    checker_index += 1
+                                    lambertian_texture_type[lambertian_index] = 1
+                                    lambertian_texture_index[lambertian_index] = checker_index
+                                    
+                                    if isinstance(obj.material.texture.even, solid_color):
+                                        solid_color_vec_index += 1
+                                        checker_texture_even_type[checker_index] = 0
+                                        checker_texture_even_index[checker_index] = solid_color_vec_index
+                                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                                    
+                                    if isinstance(obj.material.texture.odd, solid_color):
+                                        solid_color_vec_index += 1
+                                        checker_texture_odd_type[checker_index] = 0
+                                        checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                                    
+                                    checker_texture_scale[checker_index] = obj.material.texture.scale
+                                
+                                elif isinstance(obj.material.texture, perlin_noise):
+                                    perlin_index += 1
+                                    lambertian_texture_type[lambertian_index] = 2
+                                    lambertian_texture_index[lambertian_index] = perlin_index
+                                    perlin_scale[perlin_index] = obj.material.texture.scale
+                                    
+                                elif isinstance(obj.material.texture, image_texture):
+                                    image_texture_index += 1
+                                    lambertian_texture_type[lambertian_index] = 3
+                                    lambertian_texture_index[lambertian_index] = image_texture_index
+                                    image_texture_height[image_texture_index] = obj.material.texture.image.height
+                                    image_texture_width[image_texture_index] = obj.material.texture.image.width
+                                    image_texture_width_start[image_texture_index] = image_width_start
+                                    
+                                    set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                                    image_width_start += obj.material.texture.image.width                   
+                                    
+                            elif isinstance(obj.material, metal):
+                                metal_index += 1
+                                mesh_material_type[mesh_index] = 1
+                                mesh_material_index[mesh_index] = metal_index
+                                
+                                if isinstance(obj.material.texture, solid_color):
+                                    solid_color_vec_index += 1
+                                    metal_texture_type[metal_index] = 0
+                                    metal_texture_index[metal_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                                
+                                metal_fuzz[metal_index] = obj.material.fuzz
+                            
+                            elif isinstance(obj.material, dielectric):
+                                dielectric_index += 1
+                                mesh_material_type[mesh_index] = 2
+                                mesh_material_index[mesh_index] = dielectric_index
+                                dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                            
+                            elif isinstance(obj.material, diffuse_light):
+                                diffuse_light_index += 1
+                                mesh_material_type[mesh_index] = 3
+                                mesh_material_index[mesh_index] = diffuse_light_index
+                                
+                                if isinstance(obj.material.texture, solid_color):
+                                    solid_color_vec_index +=1
+                                    diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                        
                         
                         elif isinstance(obj, box):
                             box_index += 1
@@ -2512,10 +3352,8 @@ def init_world(world):
                                             image_texture_width[image_texture_index] = side.material.texture.image.width
                                             image_texture_width_start[image_texture_index] = image_width_start
                                             
-                                            for y in range(side.material.texture.image.height):
-                                                for x in range(side.material.texture.image.width):
-                                                    image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                            
+                                            set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                             image_width_start += side.material.texture.image.width
                                             
                                     elif isinstance(side.material, metal):
@@ -2623,9 +3461,8 @@ def init_world(world):
                         image_texture_width[image_texture_index] = obj.material.texture.image.width
                         image_texture_width_start[image_texture_index] = image_width_start
                         
-                        for y in range(obj.material.texture.image.height):
-                            for x in range(obj.material.texture.image.width):
-                                image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                         
                         image_width_start += obj.material.texture.image.width
                     
@@ -2710,9 +3547,8 @@ def init_world(world):
                         image_texture_width[image_texture_index] = obj.material.texture.image.width
                         image_texture_width_start[image_texture_index] = image_width_start
                         
-                        for y in range(obj.material.texture.image.height):
-                            for x in range(obj.material.texture.image.width):
-                                image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
+                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                         
                         image_width_start += obj.material.texture.image.width                   
                         
@@ -2744,6 +3580,118 @@ def init_world(world):
                         solid_color_vec_index +=1
                         diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                         solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+            
+            elif isinstance(obj, mesh):
+                
+                mesh_index += 1
+                prim_type[prim_index] = 6
+                prim_geo[prim_index] = mesh_index
+                
+                mesh_parent_node[mesh_index] = mesh_bvh_offset
+                
+                for i in range(len(obj.bvh_nodes)):
+                    mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                    mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                    mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                    mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                    mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                    mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                    
+                mesh_bvh_offset += len(obj.bvh_nodes)
+                
+                for i in range(len(obj.bvh_primitive_indices)):
+                    mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                
+                mesh_prim_offset += len(obj.bvh_primitive_indices)
+                
+                for face in obj.objects:
+                    mesh_prim_index += 1
+                    mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                    mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                    mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                    mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                    mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                    mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                
+                if isinstance(obj.material, lambertian):
+                    lambertian_index += 1
+                    mesh_material_type[mesh_index] = 0
+                    mesh_material_index[mesh_index] = lambertian_index
+                    
+                    if isinstance(obj.material.texture, solid_color):
+                        solid_color_vec_index += 1
+                        lambertian_texture_type[lambertian_index] = 0
+                        lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
+                    elif isinstance(obj.material.texture, checker_texture):
+                        checker_index += 1
+                        lambertian_texture_type[lambertian_index] = 1
+                        lambertian_texture_index[lambertian_index] = checker_index
+                        
+                        if isinstance(obj.material.texture.even, solid_color):
+                            solid_color_vec_index += 1
+                            checker_texture_even_type[checker_index] = 0
+                            checker_texture_even_index[checker_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                        
+                        if isinstance(obj.material.texture.odd, solid_color):
+                            solid_color_vec_index += 1
+                            checker_texture_odd_type[checker_index] = 0
+                            checker_texture_odd_index[checker_index] = solid_color_vec_index
+                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                        
+                        checker_texture_scale[checker_index] = obj.material.texture.scale
+                    
+                    elif isinstance(obj.material.texture, perlin_noise):
+                        perlin_index += 1
+                        lambertian_texture_type[lambertian_index] = 2
+                        lambertian_texture_index[lambertian_index] = perlin_index
+                        perlin_scale[perlin_index] = obj.material.texture.scale
+                        
+                    elif isinstance(obj.material.texture, image_texture):
+                        image_texture_index += 1
+                        lambertian_texture_type[lambertian_index] = 3
+                        lambertian_texture_index[lambertian_index] = image_texture_index
+                        image_texture_height[image_texture_index] = obj.material.texture.image.height
+                        image_texture_width[image_texture_index] = obj.material.texture.image.width
+                        image_texture_width_start[image_texture_index] = image_width_start
+                        
+                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                        
+                        image_width_start += obj.material.texture.image.width                   
+                        
+                elif isinstance(obj.material, metal):
+                    metal_index += 1
+                    mesh_material_type[mesh_index] = 1
+                    mesh_material_index[mesh_index] = metal_index
+                    
+                    if isinstance(obj.material.texture, solid_color):
+                        solid_color_vec_index += 1
+                        metal_texture_type[metal_index] = 0
+                        metal_texture_index[metal_index] = solid_color_vec_index
+                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
+                    metal_fuzz[metal_index] = obj.material.fuzz
+                
+                elif isinstance(obj.material, dielectric):
+                    dielectric_index += 1
+                    mesh_material_type[mesh_index] = 2
+                    mesh_material_index[mesh_index] = dielectric_index
+                    dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                
+                elif isinstance(obj.material, diffuse_light):
+                    diffuse_light_index += 1
+                    mesh_material_type[mesh_index] = 3
+                    mesh_material_index[mesh_index] = diffuse_light_index
+                    
+                    if isinstance(obj.material.texture, solid_color):
+                        solid_color_vec_index +=1
+                        diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+            
+            
             
             elif isinstance(obj, box):
                 box_index += 1
@@ -2802,10 +3750,8 @@ def init_world(world):
                                 image_texture_width[image_texture_index] = side.material.texture.image.width
                                 image_texture_width_start[image_texture_index] = image_width_start
                                 
-                                for y in range(side.material.texture.image.height):
-                                    for x in range(side.material.texture.image.width):
-                                        image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                
+                                set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                 image_width_start += side.material.texture.image.width   
                         
                         elif isinstance(side.material, metal):
@@ -2915,10 +3861,8 @@ def init_world(world):
                                 image_texture_width[image_texture_index] = obj.material.texture.image.width
                                 image_texture_width_start[image_texture_index] = image_width_start
                                 
-                                for y in range(obj.material.texture.image.height):
-                                    for x in range(obj.material.texture.image.width):
-                                        image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                 image_width_start += obj.material.texture.image.width
                             
                         elif isinstance(obj.material, metal):
@@ -3002,10 +3946,8 @@ def init_world(world):
                                 image_texture_width[image_texture_index] = obj.material.texture.image.width
                                 image_texture_width_start[image_texture_index] = image_width_start
                                 
-                                for y in range(obj.material.texture.image.height):
-                                    for x in range(obj.material.texture.image.width):
-                                        image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                 image_width_start += obj.material.texture.image.width                   
                                 
                         elif isinstance(obj.material, metal):
@@ -3036,6 +3978,117 @@ def init_world(world):
                                 solid_color_vec_index +=1
                                 diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                                 solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
+                    
+                    elif isinstance(obj, mesh):
+                        
+                        mesh_index += 1
+                        prim_type[prim_index] = 6
+                        prim_geo[prim_index] = mesh_index
+                        
+                        mesh_parent_node[mesh_index] = mesh_bvh_offset
+                        
+                        for i in range(len(obj.bvh_nodes)):
+                            mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                            mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                            mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                            mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                            mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                            mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                            
+                        mesh_bvh_offset += len(obj.bvh_nodes)
+                        
+                        for i in range(len(obj.bvh_primitive_indices)):
+                            mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                        
+                        mesh_prim_offset += len(obj.bvh_primitive_indices)
+                        
+                        for face in obj.objects:
+                            mesh_prim_index += 1
+                            mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                            mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                            mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                            mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                            mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                            mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                        
+                        if isinstance(obj.material, lambertian):
+                            lambertian_index += 1
+                            mesh_material_type[mesh_index] = 0
+                            mesh_material_index[mesh_index] = lambertian_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index += 1
+                                lambertian_texture_type[lambertian_index] = 0
+                                lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_index += 1
+                                lambertian_texture_type[lambertian_index] = 1
+                                lambertian_texture_index[lambertian_index] = checker_index
+                                
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_vec_index += 1
+                                    checker_texture_even_type[checker_index] = 0
+                                    checker_texture_even_index[checker_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                                
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_vec_index += 1
+                                    checker_texture_odd_type[checker_index] = 0
+                                    checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                                
+                                checker_texture_scale[checker_index] = obj.material.texture.scale
+                            
+                            elif isinstance(obj.material.texture, perlin_noise):
+                                perlin_index += 1
+                                lambertian_texture_type[lambertian_index] = 2
+                                lambertian_texture_index[lambertian_index] = perlin_index
+                                perlin_scale[perlin_index] = obj.material.texture.scale
+                                
+                            elif isinstance(obj.material.texture, image_texture):
+                                image_texture_index += 1
+                                lambertian_texture_type[lambertian_index] = 3
+                                lambertian_texture_index[lambertian_index] = image_texture_index
+                                image_texture_height[image_texture_index] = obj.material.texture.image.height
+                                image_texture_width[image_texture_index] = obj.material.texture.image.width
+                                image_texture_width_start[image_texture_index] = image_width_start
+                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                                image_width_start += obj.material.texture.image.width                   
+                                
+                        elif isinstance(obj.material, metal):
+                            metal_index += 1
+                            mesh_material_type[mesh_index] = 1
+                            mesh_material_index[mesh_index] = metal_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index += 1
+                                metal_texture_type[metal_index] = 0
+                                metal_texture_index[metal_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            metal_fuzz[metal_index] = obj.material.fuzz
+                        
+                        elif isinstance(obj.material, dielectric):
+                            dielectric_index += 1
+                            mesh_material_type[mesh_index] = 2
+                            mesh_material_index[mesh_index] = dielectric_index
+                            dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                        
+                        elif isinstance(obj.material, diffuse_light):
+                            diffuse_light_index += 1
+                            mesh_material_type[mesh_index] = 3
+                            mesh_material_index[mesh_index] = diffuse_light_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index +=1
+                                diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
                     
                     elif isinstance(obj, box):
                         box_index += 1
@@ -3094,10 +4147,8 @@ def init_world(world):
                                         image_texture_width[image_texture_index] = side.material.texture.image.width
                                         image_texture_width_start[image_texture_index] = image_width_start
                                         
-                                        for y in range(side.material.texture.image.height):
-                                            for x in range(side.material.texture.image.width):
-                                                image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                        
+                                        set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                         image_width_start += side.material.texture.image.width
                                         
                                 elif isinstance(side.material, metal):
@@ -3208,10 +4259,8 @@ def init_world(world):
                                 image_texture_width[image_texture_index] = obj.material.texture.image.width
                                 image_texture_width_start[image_texture_index] = image_width_start
                                 
-                                for y in range(obj.material.texture.image.height):
-                                    for x in range(obj.material.texture.image.width):
-                                        image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                 image_width_start += obj.material.texture.image.width
                             
                         elif isinstance(obj.material, metal):
@@ -3295,10 +4344,8 @@ def init_world(world):
                                 image_texture_width[image_texture_index] = obj.material.texture.image.width
                                 image_texture_width_start[image_texture_index] = image_width_start
                                 
-                                for y in range(obj.material.texture.image.height):
-                                    for x in range(obj.material.texture.image.width):
-                                        image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                 image_width_start += obj.material.texture.image.width                   
                                 
                         elif isinstance(obj.material, metal):
@@ -3329,6 +4376,118 @@ def init_world(world):
                                 solid_color_vec_index +=1
                                 diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                                 solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
+                    
+                    
+                    elif isinstance(obj, mesh):
+                        
+                        mesh_index += 1
+                        prim_type[prim_index] = 6
+                        prim_geo[prim_index] = mesh_index
+                        
+                        mesh_parent_node[mesh_index] = mesh_bvh_offset
+                        
+                        for i in range(len(obj.bvh_nodes)):
+                            mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                            mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                            mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                            mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                            mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                            mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                            
+                        mesh_bvh_offset += len(obj.bvh_nodes)
+                        
+                        for i in range(len(obj.bvh_primitive_indices)):
+                            mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                        
+                        mesh_prim_offset += len(obj.bvh_primitive_indices)
+                        
+                        for face in obj.objects:
+                            mesh_prim_index += 1
+                            mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                            mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                            mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                            mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                            mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                            mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                        
+                        if isinstance(obj.material, lambertian):
+                            lambertian_index += 1
+                            mesh_material_type[mesh_index] = 0
+                            mesh_material_index[mesh_index] = lambertian_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index += 1
+                                lambertian_texture_type[lambertian_index] = 0
+                                lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            elif isinstance(obj.material.texture, checker_texture):
+                                checker_index += 1
+                                lambertian_texture_type[lambertian_index] = 1
+                                lambertian_texture_index[lambertian_index] = checker_index
+                                
+                                if isinstance(obj.material.texture.even, solid_color):
+                                    solid_color_vec_index += 1
+                                    checker_texture_even_type[checker_index] = 0
+                                    checker_texture_even_index[checker_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                                
+                                if isinstance(obj.material.texture.odd, solid_color):
+                                    solid_color_vec_index += 1
+                                    checker_texture_odd_type[checker_index] = 0
+                                    checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                    solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                                
+                                checker_texture_scale[checker_index] = obj.material.texture.scale
+                            
+                            elif isinstance(obj.material.texture, perlin_noise):
+                                perlin_index += 1
+                                lambertian_texture_type[lambertian_index] = 2
+                                lambertian_texture_index[lambertian_index] = perlin_index
+                                perlin_scale[perlin_index] = obj.material.texture.scale
+                                
+                            elif isinstance(obj.material.texture, image_texture):
+                                image_texture_index += 1
+                                lambertian_texture_type[lambertian_index] = 3
+                                lambertian_texture_index[lambertian_index] = image_texture_index
+                                image_texture_height[image_texture_index] = obj.material.texture.image.height
+                                image_texture_width[image_texture_index] = obj.material.texture.image.width
+                                image_texture_width_start[image_texture_index] = image_width_start
+                                
+                                set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                                image_width_start += obj.material.texture.image.width                   
+                                
+                        elif isinstance(obj.material, metal):
+                            metal_index += 1
+                            mesh_material_type[mesh_index] = 1
+                            mesh_material_index[mesh_index] = metal_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index += 1
+                                metal_texture_type[metal_index] = 0
+                                metal_texture_index[metal_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            metal_fuzz[metal_index] = obj.material.fuzz
+                        
+                        elif isinstance(obj.material, dielectric):
+                            dielectric_index += 1
+                            mesh_material_type[mesh_index] = 2
+                            mesh_material_index[mesh_index] = dielectric_index
+                            dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                        
+                        elif isinstance(obj.material, diffuse_light):
+                            diffuse_light_index += 1
+                            mesh_material_type[mesh_index] = 3
+                            mesh_material_index[mesh_index] = diffuse_light_index
+                            
+                            if isinstance(obj.material.texture, solid_color):
+                                solid_color_vec_index +=1
+                                diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                                solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                    
                     
                     elif isinstance(obj, box):
                         box_index += 1
@@ -3387,10 +4546,8 @@ def init_world(world):
                                         image_texture_width[image_texture_index] = side.material.texture.image.width
                                         image_texture_width_start[image_texture_index] = image_width_start
                                         
-                                        for y in range(side.material.texture.image.height):
-                                            for x in range(side.material.texture.image.width):
-                                                image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                        
+                                        set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                         image_width_start += side.material.texture.image.width   
                                 
                                 elif isinstance(side.material, metal):
@@ -3500,10 +4657,8 @@ def init_world(world):
                                         image_texture_width[image_texture_index] = obj.material.texture.image.width
                                         image_texture_width_start[image_texture_index] = image_width_start
                                         
-                                        for y in range(obj.material.texture.image.height):
-                                            for x in range(obj.material.texture.image.width):
-                                                image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                        
+                                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                         image_width_start += obj.material.texture.image.width
                                     
                                 elif isinstance(obj.material, metal):
@@ -3587,10 +4742,8 @@ def init_world(world):
                                         image_texture_width[image_texture_index] = obj.material.texture.image.width
                                         image_texture_width_start[image_texture_index] = image_width_start
                                         
-                                        for y in range(obj.material.texture.image.height):
-                                            for x in range(obj.material.texture.image.width):
-                                                image_texture_data[y, image_width_start + x] = ti.Vector(obj.material.texture.image.pixels[y, x])
-                                        
+                                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
                                         image_width_start += obj.material.texture.image.width                   
                                         
                                 elif isinstance(obj.material, metal):
@@ -3621,6 +4774,118 @@ def init_world(world):
                                         solid_color_vec_index +=1
                                         diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
                                         solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            
+                            elif isinstance(obj, mesh):
+                                
+                                mesh_index += 1
+                                prim_type[prim_index] = 6
+                                prim_geo[prim_index] = mesh_index
+                                
+                                mesh_parent_node[mesh_index] = mesh_bvh_offset
+                                
+                                for i in range(len(obj.bvh_nodes)):
+                                    mesh_bvh_node_min[i+mesh_bvh_offset] = obj.bvh_nodes[i]['min']
+                                    mesh_bvh_node_max[i+mesh_bvh_offset] = obj.bvh_nodes[i]['max']
+                                    mesh_bvh_node_left[i+mesh_bvh_offset] = obj.bvh_nodes[i]['left'] + mesh_bvh_offset if (obj.bvh_nodes[i]['left'] != -1) else -1
+                                    mesh_bvh_node_right[i+mesh_bvh_offset] = obj.bvh_nodes[i]['right'] + mesh_bvh_offset if (obj.bvh_nodes[i]['right'] != -1) else -1
+                                    mesh_bvh_node_prim_start[i+mesh_bvh_offset] = obj.bvh_nodes[i]['first_prim'] + mesh_prim_offset if (obj.bvh_nodes[i]['first_prim'] != -1) else -1
+                                    mesh_bvh_node_prim_count[i+mesh_bvh_offset] = obj.bvh_nodes[i]['prim_count']
+                                    
+                                mesh_bvh_offset += len(obj.bvh_nodes)
+                                
+                                for i in range(len(obj.bvh_primitive_indices)):
+                                    mesh_prim_indices[i+mesh_prim_offset] = mesh_prim_offset + obj.bvh_primitive_indices[i]
+                                
+                                mesh_prim_offset += len(obj.bvh_primitive_indices)
+                                
+                                for face in obj.objects:
+                                    mesh_prim_index += 1
+                                    mesh_Q[mesh_prim_index] = ti.Vector(face.Q.as_list())
+                                    mesh_U[mesh_prim_index] = ti.Vector(face.U.as_list())
+                                    mesh_V[mesh_prim_index] = ti.Vector(face.V.as_list())
+                                    mesh_uv0[mesh_prim_index] = ti.Vector([face.uvs[0][0], face.uvs[0][1]])
+                                    mesh_uv1[mesh_prim_index] = ti.Vector([face.uvs[1][0], face.uvs[1][1]])
+                                    mesh_uv2[mesh_prim_index] = ti.Vector([face.uvs[2][0], face.uvs[2][1]])
+                                
+                                if isinstance(obj.material, lambertian):
+                                    lambertian_index += 1
+                                    mesh_material_type[mesh_index] = 0
+                                    mesh_material_index[mesh_index] = lambertian_index
+                                    
+                                    if isinstance(obj.material.texture, solid_color):
+                                        solid_color_vec_index += 1
+                                        lambertian_texture_type[lambertian_index] = 0
+                                        lambertian_texture_index[lambertian_index] = solid_color_vec_index
+                                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                                    
+                                    elif isinstance(obj.material.texture, checker_texture):
+                                        checker_index += 1
+                                        lambertian_texture_type[lambertian_index] = 1
+                                        lambertian_texture_index[lambertian_index] = checker_index
+                                        
+                                        if isinstance(obj.material.texture.even, solid_color):
+                                            solid_color_vec_index += 1
+                                            checker_texture_even_type[checker_index] = 0
+                                            checker_texture_even_index[checker_index] = solid_color_vec_index
+                                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.even.albedo.as_list())
+                                        
+                                        if isinstance(obj.material.texture.odd, solid_color):
+                                            solid_color_vec_index += 1
+                                            checker_texture_odd_type[checker_index] = 0
+                                            checker_texture_odd_index[checker_index] = solid_color_vec_index
+                                            solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.odd.albedo.as_list())
+                                        
+                                        checker_texture_scale[checker_index] = obj.material.texture.scale
+                                    
+                                    elif isinstance(obj.material.texture, perlin_noise):
+                                        perlin_index += 1
+                                        lambertian_texture_type[lambertian_index] = 2
+                                        lambertian_texture_index[lambertian_index] = perlin_index
+                                        perlin_scale[perlin_index] = obj.material.texture.scale
+                                        
+                                    elif isinstance(obj.material.texture, image_texture):
+                                        image_texture_index += 1
+                                        lambertian_texture_type[lambertian_index] = 3
+                                        lambertian_texture_index[lambertian_index] = image_texture_index
+                                        image_texture_height[image_texture_index] = obj.material.texture.image.height
+                                        image_texture_width[image_texture_index] = obj.material.texture.image.width
+                                        image_texture_width_start[image_texture_index] = image_width_start
+                                        
+                                        set_image_data(obj.material.texture.image.height,obj.material.texture.image.width,image_width_start,obj.material.texture.image.pixels)
+
+                                        image_width_start += obj.material.texture.image.width                   
+                                        
+                                elif isinstance(obj.material, metal):
+                                    metal_index += 1
+                                    mesh_material_type[mesh_index] = 1
+                                    mesh_material_index[mesh_index] = metal_index
+                                    
+                                    if isinstance(obj.material.texture, solid_color):
+                                        solid_color_vec_index += 1
+                                        metal_texture_type[metal_index] = 0
+                                        metal_texture_index[metal_index] = solid_color_vec_index
+                                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                                    
+                                    metal_fuzz[metal_index] = obj.material.fuzz
+                                
+                                elif isinstance(obj.material, dielectric):
+                                    dielectric_index += 1
+                                    mesh_material_type[mesh_index] = 2
+                                    mesh_material_index[mesh_index] = dielectric_index
+                                    dielectric_refractive_index[dielectric_index] = obj.material.refractive_index
+                                
+                                elif isinstance(obj.material, diffuse_light):
+                                    diffuse_light_index += 1
+                                    mesh_material_type[mesh_index] = 3
+                                    mesh_material_index[mesh_index] = diffuse_light_index
+                                    
+                                    if isinstance(obj.material.texture, solid_color):
+                                        solid_color_vec_index +=1
+                                        diffuse_light_albedo[diffuse_light_index] = solid_color_vec_index
+                                        solid_color_vec[solid_color_vec_index] = ti.Vector(obj.material.texture.albedo.as_list())
+                            
+                            
                             
                             elif isinstance(obj, box):
                                 box_index += 1
@@ -3679,10 +4944,8 @@ def init_world(world):
                                                 image_texture_width[image_texture_index] = side.material.texture.image.width
                                                 image_texture_width_start[image_texture_index] = image_width_start
                                                 
-                                                for y in range(side.material.texture.image.height):
-                                                    for x in range(side.material.texture.image.width):
-                                                        image_texture_data[y, image_width_start + x] = ti.Vector(side.material.texture.image.pixels[y, x])
-                                                
+                                                set_image_data(side.material.texture.image.height,side.material.texture.image.width,image_width_start,side.material.texture.image.pixels)
+
                                                 image_width_start += side.material.texture.image.width
                                                 
                                         elif isinstance(side.material, metal):

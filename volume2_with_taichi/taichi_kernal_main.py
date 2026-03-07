@@ -63,15 +63,17 @@ def run_kernal(image_width: ti.i32,
     defocus_disk_v = v * defocus_radius
     ray_tmin = ti.cast(0.01, ti.f32)
     ray_tmax = ti.cast(1e30, ti.f32)
+    sqrt_spp = ti.round(ti.sqrt(samples_per_pixel),dtype=ti.i32)
+    recip_sqrt_spp = 1/sqrt_spp
     
-    ti.loop_config(parallelize=12, block_dim=32, block_dim_adaptive=False)
+    ti.loop_config(parallelize=10)
     for i,j in ti.ndrange(image_width, image_height):
         current_color = ti.Vector([0.0,0.0,0.0])
         
 
-        for a in ti.ndrange(samples_per_pixel):
-        
-            pixel_center = pixel00_loc + (i+ti.random()-0.5)* pixel_u + (j+ti.random()-0.5) * pixel_v
+        for s_i, s_j in ti.ndrange(sqrt_spp,sqrt_spp):
+            offset = ti.Vector([(((s_i + ti.random()) * recip_sqrt_spp) - 0.5),(((s_j + ti.random()) * recip_sqrt_spp) - 0.5),0 ])
+            pixel_center = pixel00_loc + (i+offset[0])* pixel_u + (j+offset[1]) * pixel_v
             ray_origin = lookfrom if (defocus_angle <= 0) else random_disk_sample(lookfrom, defocus_disk_u, defocus_disk_v)
             ray_direction = pixel_center - ray_origin
             ray_time = ti.random()

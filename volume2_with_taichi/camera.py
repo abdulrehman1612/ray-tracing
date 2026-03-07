@@ -29,7 +29,7 @@ class camera:
     
     def render(self, world, realtime = False):
         
-        ti.init(arch=ti.gpu, debug=False,kernel_profiler=False)
+        ti.init(arch=ti.gpu, debug=True,kernel_profiler=False)
         
         compile_time_start = time.time()
         print()
@@ -75,8 +75,11 @@ class camera:
         print()
         print("Rendering Complete!")
         print(f"Time_taken: {hours:02d}:{minutes:02d}:{seconds:02d}")
-        from taichi_world import flag
-        print(f"{flag[0]}")
+        
+        # for debugging purpose
+        
+        #from taichi_world import flag
+        #print(f"{flag[0]}")
         
         if not realtime:
             
@@ -155,5 +158,6 @@ class camera:
                 
                 run_kernal(image_width, image_height, zoom, rotate_camera, defocus_angle, focus_distance, samples_per_pixel,max_depth, background_color)
                 ti.sync()
-            
+        
+        ti.reset()
         

@@ -90,7 +90,7 @@ def ray_color(r, ray_tmin, ray_tmax, max_depth, background_color):
                     
             if hit_anything:
                 
-                (scatter, scattered, atten, emitted) = material_scatter(current_r, (closest_t, p,front_face,normal,u,v,mat_type, mat_idx))
+                (scatter, scattered, atten, emitted) = material_scatter(current_r, (p,front_face,normal,u,v,mat_type, mat_idx))
                 if scatter:
                     
                     current_r = scattered
